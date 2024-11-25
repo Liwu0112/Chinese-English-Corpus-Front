@@ -2,7 +2,6 @@
   <div class="register-container">
     <div class="register-content">
       <h1 class="app-title">中英文语料库</h1>
-      <p class="app-subtitle">注册 - 成为我们的用户</p>
       <el-form
           ref="registerFormRef"
           :model="registerForm"
@@ -11,20 +10,28 @@
           class="register-form"
       >
         <!-- 账户 -->
-        <el-input v-model="registerForm.userName" placeholder="请输入账户" />
+        <el-form-item prop="userName">
+          <el-input v-model="registerForm.userName" placeholder="请输入账户" />
+        </el-form-item>
 
         <!-- 密码 -->
-        <el-input
-            v-model="registerForm.passWord"
-            type="password"
-            placeholder="请输入密码"
-        />
+        <el-form-item prop="passWord">
+          <el-input
+              v-model="registerForm.passWord"
+              type="password"
+              placeholder="请输入密码"
+          />
+        </el-form-item>
+
         <!-- 确认密码 -->
-        <el-input
-            v-model="registerForm.confirmPassWord"
-            type="password"
-            placeholder="请再次输入密码"
-        />
+        <el-form-item prop="confirmPassWord">
+          <el-input
+              v-model="registerForm.confirmPassWord"
+              type="password"
+              placeholder="请再次输入密码"
+          />
+        </el-form-item>
+
         <!-- 注册按钮 -->
         <el-form-item>
           <el-button
@@ -68,9 +75,11 @@ const registerForm = ref({
 
 // 表单验证规则
 const registerRules = ref({
-  userName: [{ required: true, message: "请输入账户", trigger: "blur" }],
+  userName: [
+    { required: true, message: "账户不能为空", trigger: "blur" },
+  ],
   passWord: [
-    { required: true, message: "请输入密码", trigger: "blur" },
+    { required: true, message: "密码不能为空", trigger: "blur" },
     {
       pattern: /^.{6,16}$/,
       message: "密码长度应为6-16位",
@@ -78,7 +87,7 @@ const registerRules = ref({
     },
   ],
   confirmPassWord: [
-    { required: true, message: "请再次输入密码", trigger: "blur" },
+    { required: true, message: "确认密码不能为空", trigger: "blur" },
     {
       validator: (rule, value, callback) => {
         if (value !== registerForm.value.passWord) {
@@ -131,16 +140,13 @@ const goToLogin = () => {
 };
 </script>
 
-
 <style scoped>
 .register-container {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 1) 0%, rgba(240, 240, 255, 1) 50%, rgba(220, 220, 255, 1) 100%);
-  background-repeat: no-repeat;
-  background-size: cover;
+  background: #f0f0f0; /* 浅灰色背景 */
 }
 
 .register-content {
@@ -156,14 +162,8 @@ const goToLogin = () => {
 .app-title {
   font-size: 2rem;
   font-weight: bold;
-  margin-bottom: 5px;
+  margin-bottom: 20px; /* 调整标题下间距 */
   color: #000;
-}
-
-.app-subtitle {
-  font-size: 1rem;
-  color: #888;
-  margin-bottom: 20px;
 }
 
 .register-form {

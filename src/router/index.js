@@ -19,20 +19,20 @@ const routes = [
   },
   // 普通用户首页
   {
-    path: '/userhome',
+    path: '/user_home',
     name: 'UserHome',
     component: RegularUserHomePage,
   },
   // 管理员首页
   {
-    path: '/adminhome',
+    path: '/admin_home',
     name: 'AdminHome',
-    component: AdminHomePage,}
+    component: AdminHomePage,
+  }
 ];
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
 });
-
 export default router;

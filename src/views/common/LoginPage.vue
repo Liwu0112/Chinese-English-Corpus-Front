@@ -2,7 +2,6 @@
   <div class="login-container">
     <div class="login-content">
       <h1 class="app-title">中英文语料库</h1>
-      <p class="app-subtitle">登录 - 前往至用户面板</p>
       <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef" class="login-form">
         <el-form-item prop="userName">
           <el-input v-model="loginForm.userName" placeholder="账户"></el-input>
@@ -25,14 +24,12 @@
           {{ isLoggingIn ? '登录中...' : '登录' }}
         </el-button>
         <p class="register-link">
-          还不是我们的用户？<el-link href="#" @click="goToRegister">立即注册</el-link>
+          还没有账户？<el-link href="#" @click="goToRegister">立即注册</el-link>
         </p>
       </el-form>
     </div>
   </div>
 </template>
-
-
 
 <script>
 import { ref } from 'vue';
@@ -61,26 +58,40 @@ export default {
       loginFormRef.value.validate((valid) => {
         if (valid) {
           isLoggingIn.value = true; // 设置登录中状态
-          axios.post(apiEndpoints.login, loginForm.value)
+          axios
+              .post(apiEndpoints.login, loginForm.value)
               .then((response) => {
                 if (response.data.code === 200) {
-                  ElMessage.success('登录成功');
-                  router.push('/regularenroll');
+                  ElMessage.success("登录成功");
+                  const userName = response.data.data.userName; // 从返回数据中获取 userName
+                  const role = response.data.data.role; // 用户角色
+                  if (role === "admin") {
+                    router.push({
+                      name: "adminHome",
+                      query: { username: userName }, // 通过 query 传递
+                    });
+                  } else if (role === "regular_user") {
+                    router.push({
+                      name: "UserHome",
+                      query: { username: userName }, // 通过 query 传递
+                    });
+                  }
                 } else {
-                  ElMessage.error('登录失败：' + response.data.msg);
+                  ElMessage.error("登录失败,请重试");
                 }
               })
               .catch((error) => {
-                ElMessage.error('网络错误：' + error.message);
+                ElMessage.error("网络错误：" + error.message);
               })
               .finally(() => {
                 isLoggingIn.value = false; // 无论成功或失败，都重置状态
               });
         } else {
-          ElMessage.warning('请填写完整信息');
+          ElMessage.warning("请填写完整信息");
         }
       });
     };
+
 
     const goToRegister = () => {
       router.push('/regularenroll');
@@ -104,9 +115,7 @@ export default {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 1) 0%, rgba(240, 240, 255, 1) 50%, rgba(220, 220, 255, 1) 100%);
-  background-repeat: no-repeat;
-  background-size: cover;
+  background: #f0f0f0; /* 浅灰色背景 */
 }
 
 .login-content {
@@ -122,14 +131,8 @@ export default {
 .app-title {
   font-size: 2rem;
   font-weight: bold;
-  margin-bottom: 5px;
+  margin-bottom: 20px; /* 调整标题下间距 */
   color: #000;
-}
-
-.app-subtitle {
-  font-size: 1rem;
-  color: #888;
-  margin-bottom: 20px;
 }
 
 .login-form {
@@ -162,4 +165,3 @@ export default {
   color: #666;
 }
 </style>
-
