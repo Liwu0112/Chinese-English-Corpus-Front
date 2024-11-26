@@ -1,8 +1,9 @@
+<!--登录页-->
 <template>
   <div class="login-container">
     <div class="login-content">
       <h1 class="app-title">中英文语料库</h1>
-      <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef" class="login-form">
+      <el-form :model="loginForm" :rules="loginRules" ref="loginFormRef" class="login-form" @keyup.enter="submitForm">
         <el-form-item prop="userName">
           <el-input v-model="loginForm.userName" placeholder="账户"></el-input>
         </el-form-item>
@@ -30,6 +31,7 @@
     </div>
   </div>
 </template>
+
 
 <script>
 import { ref } from 'vue';
@@ -67,12 +69,12 @@ export default {
                   const role = response.data.data.role; // 用户角色
                   if (role === "admin") {
                     router.push({
-                      name: "adminHome",
+                      name: "AdminHome",
                       query: { username: userName }, // 通过 query 传递
                     });
                   } else if (role === "regular_user") {
                     router.push({
-                      name: "UserHome",
+                      name: "RegularUserHome",
                       query: { username: userName }, // 通过 query 传递
                     });
                   }
@@ -94,7 +96,7 @@ export default {
 
 
     const goToRegister = () => {
-      router.push('/regularenroll');
+      router.push('/regular_enroll');
     };
 
     return {

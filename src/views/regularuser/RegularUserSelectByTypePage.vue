@@ -1,4 +1,4 @@
-<!--普通用户主页面-->
+<!--普通用户分类查找页面-->
 <template>
   <div class="layout-container">
     <!-- 左侧菜单栏 -->
@@ -9,7 +9,7 @@
       </div>
 
       <!-- 菜单项 -->
-      <el-menu class="menu-list" router>
+      <el-menu  class="menu-list" router>
         <el-sub-menu index="功能">
           <template #title>
             <i class="el-icon-shopping-cart-full"></i>
@@ -39,10 +39,6 @@
     <!-- 内容区域 -->
     <main class="content-area">
       <div class="toolbar">
-        <!-- 工具栏 -->
-        <el-button type="text" size="mini" @click="toggleTheme">
-          <i :class="themeIcon"></i>
-        </el-button>
         <div class="user-info">
           <span>欢迎您，{{ userName }}</span>
           <!-- 退出按钮 -->
@@ -72,7 +68,6 @@ export default defineComponent({
     const router = useRouter();
     const route = useRoute();
     const userName = ref(route.query.username);
-
     const logout = () => {
       axios
           .get(apiEndpoints.logout, {

@@ -1,3 +1,4 @@
+<!--普通用户注册页-->
 <template>
   <div class="register-container">
     <div class="register-content">
@@ -8,48 +9,49 @@
           :rules="registerRules"
           label-position="top"
           class="register-form"
+          @keyup.enter="submitForm"
       >
-        <!-- 账户 -->
-        <el-form-item prop="userName">
-          <el-input v-model="registerForm.userName" placeholder="请输入账户" />
-        </el-form-item>
+      <!-- 账户 -->
+      <el-form-item prop="userName">
+        <el-input v-model="registerForm.userName" placeholder="请输入账户" />
+      </el-form-item>
 
-        <!-- 密码 -->
-        <el-form-item prop="passWord">
-          <el-input
-              v-model="registerForm.passWord"
-              type="password"
-              placeholder="请输入密码"
-          />
-        </el-form-item>
+      <!-- 密码 -->
+      <el-form-item prop="passWord">
+        <el-input
+            v-model="registerForm.passWord"
+            type="password"
+            placeholder="请输入密码"
+        />
+      </el-form-item>
 
-        <!-- 确认密码 -->
-        <el-form-item prop="confirmPassWord">
-          <el-input
-              v-model="registerForm.confirmPassWord"
-              type="password"
-              placeholder="请再次输入密码"
-          />
-        </el-form-item>
+      <!-- 确认密码 -->
+      <el-form-item prop="confirmPassWord">
+        <el-input
+            v-model="registerForm.confirmPassWord"
+            type="password"
+            placeholder="请再次输入密码"
+        />
+      </el-form-item>
 
-        <!-- 注册按钮 -->
-        <el-form-item>
-          <el-button
-              type="primary"
-              class="register-button"
-              :loading="isRegistering"
-              @click="submitForm"
-              block
-          >
-            {{ isRegistering ? "注册中..." : "注册" }}
-          </el-button>
-        </el-form-item>
+      <!-- 注册按钮 -->
+      <el-form-item>
+        <el-button
+            type="primary"
+            class="register-button"
+            :loading="isRegistering"
+            @click="submitForm"
+            block
+        >
+          {{ isRegistering ? "注册中..." : "注册" }}
+        </el-button>
+      </el-form-item>
 
-        <!-- 返回登录 -->
-        <p class="login-link">
-          已有账户？
-          <el-link @click="goToLogin">立即登录</el-link>
-        </p>
+      <!-- 返回登录 -->
+      <p class="login-link">
+        已有账户？
+        <el-link @click="goToLogin">立即登录</el-link>
+      </p>
       </el-form>
     </div>
   </div>
@@ -60,6 +62,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import axios from "axios";
+import apiEndpoints from "@/apiConfig";
 
 const router = useRouter();
 
@@ -110,7 +113,7 @@ const submitForm = () => {
     if (valid) {
       isRegistering.value = true;
       axios
-          .post("/api/register", {
+          .post(apiEndpoints.regularenroll, {
             userName: registerForm.value.userName,
             passWord: registerForm.value.passWord,
           })
