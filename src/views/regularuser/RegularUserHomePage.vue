@@ -1,4 +1,3 @@
-<!--普通用户主页面-->
 <template>
   <div class="layout-container">
     <!-- 左侧菜单栏 -->
@@ -9,100 +8,79 @@
       </div>
 
       <!-- 菜单项 -->
-      <el-menu class="menu-list" router>
-        <el-sub-menu index="功能">
-          <template #title>
-            <i class="el-icon-shopping-cart-full"></i>
-            <span>功能</span>
-          </template>
-          <el-menu-item
-              :index="{ path: '/regular_user_corpus', query: { username: userName } }"
-          >
-            语句查询
-          </el-menu-item>
-          <el-menu-item
-              :index="{ path: '/regular_user_type', query: { username: userName } }"
-          >
-            分类查询
-          </el-menu-item>
-        </el-sub-menu>
-        <el-sub-menu index="用户">
-          <template #title>
-            <i class="el-icon-user"></i>
-            <span>用户</span>
-          </template>
-          <el-menu-item index="个人中心">个人中心</el-menu-item>
-        </el-sub-menu>
+      <el-menu class="menu-list" router :default-active="activeMenu" @select="handleMenuSelect">
+        <el-menu-item index="RegularUserHome">
+          <i class="el-icon-document"></i>
+          <span>首页</span>
+        </el-menu-item>
+        <el-menu-item index="RegularUserSelectByCorpus">
+          <i class="el-icon-dollar"></i>
+          <span>语料搜索</span>
+        </el-menu-item>
+        <el-menu-item index="RegularUserSelectByType">
+          <i class="el-icon-shopping-cart"></i>
+          <span>分类查找</span>
+        </el-menu-item>
+        <el-menu-item index="RegularUserPersonalCenter">
+          <i class="el-icon-tickets"></i>
+          <span>个人中心</span>
+        </el-menu-item>
       </el-menu>
     </aside>
 
     <!-- 内容区域 -->
     <main class="content-area">
       <div class="toolbar">
-        <!-- 工具栏 -->
         <el-button type="text" size="mini" @click="toggleTheme">
           <i :class="themeIcon"></i>
         </el-button>
         <div class="user-info">
           <span>欢迎您，{{ userName }}</span>
-          <!-- 退出按钮 -->
-          <el-button type="text" size="mini" @click="logout">退出</el-button>
+          <el-button type="text" class="custom-button" size="mini" @click="logout">点击退出</el-button>
         </div>
       </div>
 
       <!-- 主体内容 -->
       <div class="page-content">
-        <p>这里是 首页 页面内容。</p>
+        <p>这里是 语料搜索 页面内容。</p>
       </div>
     </main>
   </div>
 </template>
 
-
-
 <script>
-import { defineComponent, ref } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import axios from "axios";
-import { ElMessage } from "element-plus";
-import apiEndpoints from "@/apiConfig"; // 假设你的接口文件
+import { defineComponent, ref } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 
 export default defineComponent({
   setup() {
     const router = useRouter();
     const route = useRoute();
-    const userName = ref(route.query.username);
+
+    const userName = ref(route.query.username); // 从路由的查询参数中获取 userName
+    const activeMenu = ref('RegularUserHome'); //
+
+    const handleMenuSelect = (index) => {
+      activeMenu.value = index;
+      // 跳转并传递查询参数
+      router.push({
+        name: index, // 根据选中的菜单项进行跳转
+        query: { username: userName.value}, // 传递 userName
+      });
+    };
 
     const logout = () => {
-      axios
-          .get(apiEndpoints.logout, {
-          })
-          .then((response) => {
-            if (response.data.code === 200) {
-              ElMessage.success("退出成功");
-              router.push("/");
-            } else {
-              ElMessage.error("登录状态异常，请重新登录");
-              router.push("/");
-            }
-          })
-          .catch((error) => {
-            if (error.response && error.response.status === 401) {
-              ElMessage.error("身份验证失败，请重新登录");
-            } else {
-              ElMessage.error("请求失败，请稍后重试");
-            }
-            router.push("/");
-          });
+      router.push('/'); // 退出登录时跳转到首页
     };
 
     return {
       userName,
+      activeMenu,
+      handleMenuSelect,
       logout,
     };
   },
 });
-
 </script>
 
 
@@ -110,7 +88,7 @@ export default defineComponent({
 /* 页面布局 */
 .layout-container {
   display: flex;
-  height: 100vh;
+  height:100vh;
 }
 
 /* 左侧菜单栏 */
@@ -142,6 +120,20 @@ export default defineComponent({
   border-right: none;
 }
 
+/* 菜单项选中状态 */
+.el-menu-item.is-active {
+  background-color: #f0f0f0; /* 设置选中项的背景颜色 */
+  border-radius: 5px;       /* 添加圆角效果 */
+  color: #409eff;          /* 设置选中项的文字颜色 */
+  font-weight: bold;       /* 加粗文字 */
+}
+
+/* 未选中的菜单项 */
+.el-menu-item {
+  color: #333;
+  transition: all 0.3s ease;
+}
+
 /* 内容区域 */
 .content-area {
   flex: 1;
@@ -167,5 +159,20 @@ export default defineComponent({
   margin-right: 15px; /* 设置欢迎文本与按钮之间的间距 */
   color: black; /* 设置字体颜色为黑色 */
 }
-</style>
+.custom-button {
+  background-color: black;
+  color: white;
+  border: none;
+  font-weight: bold;
+}
 
+.custom-button:hover {
+  background-color: #409eff !important;
+  color: white !important;
+}
+
+.custom-button:active {
+  background-color: #409eff !important;
+  color: white !important;
+}
+</style>

@@ -3,35 +3,37 @@
   <div class="layout-container">
     <!-- 左侧菜单栏 -->
     <aside class="menu-bar">
+      <!-- LOGO区域 -->
       <div class="logo-container">
         <span class="logo-text">中英文语料库</span>
       </div>
 
-      <el-menu class="menu-list" router>
-        <el-sub-menu index="功能">
-          <template #title>
-            <i class="el-icon-shopping-cart-full"></i>
-            <span>功能</span>
-          </template>
-          <el-menu-item :index="{ path: '/regular_user_corpus', query: { username: userName } }">语句查询</el-menu-item>
-          <el-menu-item :index="{ path: '/regular_user_type', query: { username: userName } }">分类查询</el-menu-item>
-        </el-sub-menu>
-        <el-sub-menu index="用户">
-          <template #title>
-            <i class="el-icon-user"></i>
-            <span>用户</span>
-          </template>
-          <el-menu-item index="个人中心">个人中心</el-menu-item>
-        </el-sub-menu>
+      <!-- 菜单项 -->
+      <el-menu class="menu-list" router :default-active="activeMenu" @select="handleMenuSelect">
+        <el-menu-item index="RegularUserHome">
+          <i class="el-icon-document"></i>
+          <span>首页</span>
+        </el-menu-item>
+        <el-menu-item index="RegularUserSelectByCorpus">
+          <i class="el-icon-dollar"></i>
+          <span>语料搜索</span>
+        </el-menu-item>
+        <el-menu-item index="RegularUserSelectByType">
+          <i class="el-icon-shopping-cart"></i>
+          <span>分类查找</span>
+        </el-menu-item>
+        <el-menu-item index="RegularUserPersonalCenter">
+          <i class="el-icon-tickets"></i>
+          <span>个人中心</span>
+        </el-menu-item>
       </el-menu>
     </aside>
-
     <!-- 内容区域 -->
     <main class="content-area">
       <div class="toolbar">
         <div class="user-info">
           <span>欢迎您，{{ userName }}</span>
-          <el-button type="text" size="mini" @click="logout">退出</el-button>
+          <el-button type="text" class="custom-button" size="mini" @click="logout">点击退出</el-button>
         </div>
       </div>
 
@@ -43,12 +45,12 @@
               placeholder="请输入需要搜索的语料段"
               clearable
               @keyup.enter="searchCorpus"
-          style="width: 60%; border: 1px solid black;"
+          style="width: 60%;"
           ></el-input>
           <el-button
               type="primary"
               @click="searchCorpus"
-              style="background-color: black; color: white;"
+              class="custom-button"
           >
             搜索
           </el-button>
@@ -95,10 +97,21 @@ export default defineComponent({
     const displaySearchText = ref(''); // 用于显示的搜索文本
     const searchResult = ref(null); // 存储搜索结果
 
+    const activeMenu = ref('RegularUserSelectByCorpus'); //
+
+    const handleMenuSelect = (index) => {
+      activeMenu.value = index;
+      // 跳转并传递查询参数
+      router.push({
+        name: index, // 根据选中的菜单项进行跳转
+        query: { username: userName.value}, // 传递 userName
+      });
+    };
+
     // 退出登录功能
     const logout = () => {
       axios
-          .get(apiEndpoints.logout, {})
+          .get(apiEndpoints.logout)
           .then((response) => {
             if (response.data.code === 200) {
               ElMessage.success("退出成功");
@@ -126,7 +139,6 @@ export default defineComponent({
       }
 
       displaySearchText.value = inputText; // 更新显示的搜索文本
-
       // 调用接口进行搜索
       axios.post(`${apiEndpoints.translationtext}?text=${inputText}`)
           .then((response) => {
@@ -148,6 +160,8 @@ export default defineComponent({
       displaySearchText,
       searchCorpus,
       searchResult,
+      handleMenuSelect,
+      activeMenu
     };
   },
 });
@@ -189,12 +203,32 @@ export default defineComponent({
   flex: 1;
   border-right: none;
 }
+/* 菜单项选中状态 */
+.el-menu-item.is-active {
+  background-color: #f0f0f0; /* 设置选中项的背景颜色 */
+  border-radius: 5px;       /* 添加圆角效果 */
+  color: #409eff;          /* 设置选中项的文字颜色 */
+  font-weight: bold;       /* 加粗文字 */
+}
+
 
 /* 内容区域 */
 .content-area {
   flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 20px;
   background-color: #f5f5f5;
+  overflow: hidden; /* 防止整体区域溢出滚动 */
+}
+
+.page-content {
+  flex: 1; /* 使内容区域占据剩余空间 */
+  overflow-y: auto; /* 开启纵向滚动 */
+  background-color: #ffffff; /* 确保有白色背景 */
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 添加视觉分隔感 */
+  border-radius: 5px; /* 可选：圆角样式 */
 }
 
 /* 工具栏 */
@@ -249,5 +283,26 @@ export default defineComponent({
   font-size: 16px;
   font-weight: bold;
 }
+.custom-button {
+  background-color: black;
+  color: white;
+  border: none;
+  font-weight: bold;
+}
+
+.custom-button:hover {
+  background-color: #409eff !important;
+  color: white !important;
+}
+
+.custom-button:active {
+  background-color: #409eff !important;
+  color: white !important;
+}
+.html, body {
+  height: 100%;
+  overflow: hidden; /* 禁止全局滚动 */
+}
+
 </style>
 

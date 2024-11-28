@@ -1,119 +1,229 @@
-<!--普通用户主页面-->
 <template>
   <div class="layout-container">
     <!-- 左侧菜单栏 -->
     <aside class="menu-bar">
-      <!-- LOGO区域 -->
       <div class="logo-container">
         <span class="logo-text">中英文语料库</span>
       </div>
-
-      <!-- 菜单项 -->
-      <el-menu class="menu-list" router>
-        <el-sub-menu index="功能">
-          <template #title>
-            <i class="el-icon-shopping-cart-full"></i>
-            <span>功能</span>
-          </template>
-          <el-menu-item
-              :index="{ path: '/regular_user_corpus', query: { username: userName } }"
-          >
-            语句查询
-          </el-menu-item>
-          <el-menu-item
-              :index="{ path: '/regular_user_type', query: { username: userName } }"
-          >
-            分类查询
-          </el-menu-item>
-        </el-sub-menu>
-        <el-sub-menu index="用户">
-          <template #title>
-            <i class="el-icon-user"></i>
-            <span>用户</span>
-          </template>
-          <el-menu-item index="个人中心">个人中心</el-menu-item>
-        </el-sub-menu>
+      <el-menu class="menu-list" router :default-active="activeMenu" @select="handleMenuSelect">
+        <el-menu-item index="RegularUserHome">
+          <i class="el-icon-document"></i>
+          <span>首页</span>
+        </el-menu-item>
+        <el-menu-item index="RegularUserSelectByCorpus">
+          <i class="el-icon-dollar"></i>
+          <span>语料搜索</span>
+        </el-menu-item>
+        <el-menu-item index="RegularUserSelectByType">
+          <i class="el-icon-shopping-cart"></i>
+          <span>分类查找</span>
+        </el-menu-item>
+        <el-menu-item index="RegularUserPersonalCenter">
+          <i class="el-icon-tickets"></i>
+          <span>个人中心</span>
+        </el-menu-item>
       </el-menu>
     </aside>
-
     <!-- 内容区域 -->
     <main class="content-area">
       <div class="toolbar">
-        <!-- 工具栏 -->
         <el-button type="text" size="mini" @click="toggleTheme">
           <i :class="themeIcon"></i>
         </el-button>
         <div class="user-info">
-          <span>欢迎您，{{ userName }}</span>
-          <!-- 退出按钮 -->
-          <el-button type="text" size="mini" @click="logout">退出</el-button>
+          <span>欢迎您，{{userName}}</span>
+          <el-button type="text" class="custom-button" size="mini" @click="logout"> 点击退出 </el-button>
         </div>
       </div>
-
-      <!-- 主体内容 -->
       <div class="page-content">
-        <p>这里是 首页 页面内容。</p>
+        <div class="greeting-container">
+          <p style="font-size: 1.5rem; font-weight: bold;">{{greeting}} ,  {{userName}} ! 欢迎来到用户中心 ！</p>
+        </div>
+        <div class="forms-container">
+          <!-- 修改账户名表单 -->
+          <el-card class="form-left" shadow="always">
+            <h3>修改账户名</h3>
+            <el-form label-width="100px" @submit.prevent="handleChangeUsername">
+              <el-form-item label="新账户名">
+                <el-input v-model="userNewName" placeholder="请输入新账户名"></el-input>
+              </el-form-item>
+              <div class="form-buttons">
+                <el-button type="primary" class="custom-button" @click="handleChangeUsername">确认</el-button>
+                <el-button type="warning" class="custom-button" @click="resetChangeUsernameForm">重置</el-button>
+              </div>
+            </el-form>
+          </el-card>
+
+          <!-- 修改密码表单 -->
+          <el-card class="form-right" shadow="always">
+            <h3>修改密码</h3>
+            <el-form label-width="100px" @submit.prevent="handleChangePassword">
+              <el-form-item label="旧密码">
+                <el-input type="password" v-model="oldPassword" placeholder="请输入旧密码"></el-input>
+              </el-form-item>
+              <el-form-item label="新密码">
+                <el-input type="password" v-model="newPassword" placeholder="请输入新密码"></el-input>
+              </el-form-item>
+              <el-form-item label="确认新密码">
+                <el-input type="password" v-model="confirmNewPassword" placeholder="请确认新密码"></el-input>
+              </el-form-item>
+              <div class="form-buttons">
+                <el-button type="primary" class="custom-button" @click="handleChangePassword">确认</el-button>
+                <el-button type="warning" class="custom-button" @click="resetChangePasswordForm">重置</el-button>
+              </div>
+            </el-form>
+          </el-card>
+        </div>
       </div>
     </main>
   </div>
 </template>
 
-
-
 <script>
-import { defineComponent, ref } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import {defineComponent, ref} from "vue";
+import {useRouter, useRoute} from "vue-router";
 import axios from "axios";
-import { ElMessage } from "element-plus";
-import apiEndpoints from "@/apiConfig"; // 假设你的接口文件
+import {ElMessage} from "element-plus";
+import apiEndpoints from "@/apiConfig";
 
 export default defineComponent({
   setup() {
     const router = useRouter();
     const route = useRoute();
     const userName = ref(route.query.username);
+    const activeMenu = ref("RegularUserPersonalCenter");
+
+    const getGreeting = () => {
+      const currentHour = new Date().getHours();
+      if (currentHour >= 0 && currentHour < 12) {
+        return "早上好";
+      } else if (currentHour >= 12 && currentHour < 18) {
+        return "中午好";
+      } else {
+        return "晚上好";
+      }
+    };
+
+    const greeting = ref(getGreeting());
+    const userNewName = ref("");
+    const oldPassword = ref("");
+    const newPassword = ref("");
+    const confirmNewPassword = ref("");
+
+    const handleMenuSelect = (index) => {
+      activeMenu.value = index;
+      router.push({
+        name: index,
+        query: {username: userName.value}
+      });
+    };
 
     const logout = () => {
-      axios
-          .get(apiEndpoints.logout, {
-          })
-          .then((response) => {
-            if (response.data.code === 200) {
-              ElMessage.success("退出成功");
-              router.push("/");
-            } else {
-              ElMessage.error("登录状态异常，请重新登录");
-              router.push("/");
-            }
-          })
-          .catch((error) => {
-            if (error.response && error.response.status === 401) {
-              ElMessage.error("身份验证失败，请重新登录");
-            } else {
-              ElMessage.error("请求失败，请稍后重试");
-            }
-            router.push("/");
-          });
+      axios.get(apiEndpoints.logout).then((response) => {
+        if (response.data.code === 200) {
+          ElMessage.success("退出成功");
+          router.push("/");
+        } else {
+          ElMessage.error("登录状态异常，请重新登录");
+          router.push("/");
+        }
+      }).catch((error) => {
+        if (error.response && error.response.status === 401) {
+          ElMessage.error("身份验证失败，请重新登录");
+        } else {
+          ElMessage.error("请求失败，请稍后重试");
+        }
+        router.push("/");
+      });
+    };
+    const handleChangeUsername = () => {
+      if (!userNewName.value) {
+        ElMessage.warning("请输入新账户名！");
+        return;
+      }
+      axios.post(apiEndpoints.updateusername, {
+        userName: userName.value,
+        userNewName: userNewName.value
+      }).then((response) => {
+        if (response.data.code === 200) {
+          ElMessage.success("账户修改成功");
+          userName.value = userNewName.value;
+          userNewName.value = "";
+        } else {
+          userNewName.value = "";
+          ElMessage.error("修改失败，账户已被使用,请更改输入的账户名并重新提交");
+        }
+      }).catch(() => {
+        ElMessage.error("请求失败，请稍后重试");
+      });
+    };
+
+
+    const resetChangeUsernameForm = () => {
+      userNewName.value = "";
+    };
+
+    const handleChangePassword = () => {
+      if (!oldPassword.value || !newPassword.value || !confirmNewPassword.value) {
+        ElMessage.warning("请完整填写密码信息！");
+        return;
+      }
+      if (newPassword.value !== confirmNewPassword.value) {
+        ElMessage.error("两次输入的新密码不一致！");
+        return;
+      }
+      axios.post(apiEndpoints.updatepassword, {
+        userName: userName.value,
+        userNewPassword: newPassword.value
+      }).then((response) => {
+        if (response.data.code === 200) {
+          ElMessage.success("密码修改成功，请重新登录");
+          oldPassword.value = "";
+          newPassword.value = "";
+          confirmNewPassword.value = "";
+          router.push("/");
+        } else {
+          oldPassword.value = "";
+          newPassword.value = "";
+          confirmNewPassword.value = "";
+          ElMessage.error("修改失败，新密码和旧密码相同");
+        }
+      }).catch(() => {
+        ElMessage.error("请求失败，请稍后重试");
+      });
+    };
+
+    const resetChangePasswordForm = () => {
+      oldPassword.value = "";
+      newPassword.value = "";
+      confirmNewPassword.value = "";
     };
 
     return {
       userName,
+      userNewName,
+      oldPassword,
+      newPassword,
+      confirmNewPassword,
       logout,
+      handleMenuSelect,
+      handleChangeUsername,
+      handleChangePassword,
+      activeMenu,
+      greeting,
+      resetChangeUsernameForm,
+      resetChangePasswordForm
     };
-  },
+  }
 });
-
 </script>
 
-
 <style scoped>
-/* 页面布局 */
 .layout-container {
   display: flex;
-  height: 100vh;
+  height:  100vh;
 }
 
-/* 左侧菜单栏 */
 .menu-bar {
   width: 260px;
   background-color: #fff;
@@ -123,7 +233,13 @@ export default defineComponent({
   padding: 20px 0;
 }
 
-/* LOGO区域 */
+.el-menu-item.is-active {
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  color: #409eff;
+  font-weight: bold;
+}
+
 .logo-container {
   display: flex;
   align-items: center;
@@ -136,20 +252,17 @@ export default defineComponent({
   font-weight: bold;
 }
 
-/* 菜单列表 */
 .menu-list {
   flex: 1;
   border-right: none;
 }
 
-/* 内容区域 */
 .content-area {
   flex: 1;
   padding: 20px;
   background-color: #f5f5f5;
 }
 
-/* 工具栏 */
 .toolbar {
   display: flex;
   justify-content: flex-end;
@@ -162,10 +275,57 @@ export default defineComponent({
   align-items: center;
 }
 
-/* 添加间距 */
 .user-info span {
-  margin-right: 15px; /* 设置欢迎文本与按钮之间的间距 */
-  color: black; /* 设置字体颜色为黑色 */
+  margin-right: 15px;
+  color: black;
+}
+
+.page-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.forms-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.form-left,
+.form-right {
+  width: 48%;  /* Slightly adjusted width for better spacing */
+}
+
+.greeting-container {
+  text-align: center;
+}
+
+h3 {
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: center; /* Horizontally center the buttons */
+  gap: 20px;  /* Add space between the buttons */
+}
+
+.custom-button {
+  background-color: black;
+  color: white;
+  border: none;
+  font-weight: bold;
+}
+
+.custom-button:hover {
+  background-color: #409eff !important;
+  color: white !important;
+}
+
+.custom-button:active {
+  background-color: #409eff !important;
+  color: white !important;
 }
 </style>
-

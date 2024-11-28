@@ -6,6 +6,11 @@ const apiEndpoints = {
     logout: `${baseUrlB}/logout`,   //退出接口
     regularenroll: `${baseUrlC}/enroll`,    //普通用户注册接口
     translationtext: `${baseUrlC}/translationbytext`,   //普通用户语料查询接口
+    updateusername: `${baseUrlB}/updateusername`,
+    updatepassword: `${baseUrlB}/updatepassword`,
+    selectkindsname : `${baseUrlC}/selectallkindname`,
+    selecttnbykn: `${baseUrlC}/selecttnbykn`,
+    selecttypecorpus: `${baseUrlC}/selecttypecorpus`,
 }
 
 export default apiEndpoints;
