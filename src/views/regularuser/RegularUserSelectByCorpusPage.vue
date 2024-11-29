@@ -63,11 +63,11 @@
             <span class="result-text">
               以下是包含字段 "{{ displaySearchText }}"的所有语料：
             </span>
-            <el-table :data="searchResult">
-              <el-table-column prop="chineseText" label="中文语料"></el-table-column>
-              <el-table-column prop="englishText" label="英文语料"></el-table-column>
-              <el-table-column prop="kindName" label="种类名称"></el-table-column>
-              <el-table-column prop="typeName" label="类型名称"></el-table-column>
+            <el-table :data="searchResult" border style="margin-top: 20px;">
+              <el-table-column prop="chineseText" label="中文内容" align="center"></el-table-column>
+              <el-table-column prop="englishText" label="英文内容" align="center"></el-table-column>
+              <el-table-column prop="kindName" label="种类名称" align="center"></el-table-column>
+              <el-table-column prop="typeName" label="分类名称" align="center"></el-table-column>
             </el-table>
           </div>
 

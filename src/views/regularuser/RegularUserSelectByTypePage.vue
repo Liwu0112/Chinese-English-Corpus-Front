@@ -2,7 +2,6 @@
   <div class="layout-container">
     <!-- 左侧菜单栏 -->
     <aside class="menu-bar">
-      <!-- LOGO区域 -->
       <div class="logo-container">
         <span class="logo-text">中英文语料库</span>
       </div>
@@ -28,37 +27,53 @@
       </el-menu>
     </aside>
 
-    <!-- 内容区域 -->
     <main class="content-area">
       <div class="toolbar">
         <div class="user-info">
           <span>欢迎您，{{ userName }}</span>
-          <!-- 退出按钮 -->
           <el-button type="text" class="custom-button" size="mini" @click="logout">点击退出</el-button>
         </div>
       </div>
 
       <!-- 主体内容 -->
       <div class="page-content">
-        <p>这里是 分类页面内容。</p>
+        <div class="greeting-container">
+          <p style="font-size: 1.5rem; font-weight: bold;">请选择要查看的分类</p>
+        </div>
 
-        <!-- 树形选择器 -->
-        <el-tree
-            :data="treeData"
-            :props="treeProps"
-            accordion
-            default-expanded-keys="[1]"
-            node-key="id"
-            @node-click="handleNodeClick"
-        ></el-tree>
+        <!-- 横向按钮组 -->
+        <div class="button-container">
+          <div class="first-level-buttons">
+            <el-button
+                v-for="(node) in treeData"
+                :key="node.id"
+                type="primary"
+                plain
+                @click="handleFirstLevelClick(node)"
+            >
+              {{ node.label }}
+            </el-button>
+          </div>
+          <div class="second-level-buttons" v-if="currentSecondLevel.length > 0">
+            <el-button
+                v-for="(node) in currentSecondLevel"
+                :key="node.id"
+                type="success"
+                plain
+                @click="handleSecondLevelClick(node)"
+            >
+              {{ node.label }}
+            </el-button>
+          </div>
+        </div>
 
         <!-- 数据表格/提示信息 -->
         <div class="result-content">
           <el-table v-if="corpusData.length > 0" :data="corpusData" border style="margin-top: 20px;">
-            <el-table-column prop="chineseText" label="中文内容" width="300"></el-table-column>
-            <el-table-column prop="englishText" label="英文内容" width="300"></el-table-column>
-            <el-table-column prop="kindName" label="类别名称" width="150"></el-table-column>
-            <el-table-column prop="typeName" label="分类名称" width="150"></el-table-column>
+            <el-table-column prop="chineseText" label="中文内容" align="center"></el-table-column>
+            <el-table-column prop="englishText" label="英文内容" align="center"></el-table-column>
+            <el-table-column prop="kindName" label="种类名称" align="center"></el-table-column>
+            <el-table-column prop="typeName" label="分类名称" align="center"></el-table-column>
           </el-table>
 
           <div v-else class="no-data-message">
@@ -75,7 +90,7 @@ import { defineComponent, ref, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import axios from "axios";
 import { ElMessage } from "element-plus";
-import apiEndpoints from "@/apiConfig"; // 假设你的接口文件
+import apiEndpoints from "@/apiConfig";
 
 export default defineComponent({
   setup() {
@@ -84,26 +99,21 @@ export default defineComponent({
     const userName = ref(route.query.username);
 
     const activeMenu = ref("RegularUserSelectByType");
-    const treeData = ref([]);
-    const corpusData = ref([]);
-    const errorMessage = ref(""); // 用于显示无数据提示信息
-    const treeProps = {
-      children: "children",
-      label: "label",
-    };
+    const treeData = ref([]); // 第一层数据
+    const currentSecondLevel = ref([]); // 当前显示的第二层数据
+    const currentFirstLevel = ref(""); // 当前选中的第一层分类值
+    const corpusData = ref([]); // 表格数据
+    const errorMessage = ref("");
 
-    // 获取第一层分类数据
+    // 获取分类数据
     const fetchCategories = async () => {
       try {
         const response = await axios.get(apiEndpoints.selectkindsname);
         if (response.data.code === 200) {
-          const categories = response.data.data.map((category, index) => ({
+          treeData.value = response.data.data.map((category, index) => ({
             id: index + 1,
             label: category.kindName,
-            children: [],
-            parent: null,
           }));
-          treeData.value = categories;
         } else {
           ElMessage.error("获取分类数据失败");
         }
@@ -113,17 +123,14 @@ export default defineComponent({
     };
 
     // 获取第二层分类数据
-    const fetchSecondLevelData = async (kindName, node) => {
+    const fetchSecondLevelData = async (kindName) => {
       try {
         const response = await axios.post(`${apiEndpoints.selecttnbykn}?kindName=${kindName}`);
         if (response.data.code === 200) {
-          const secondLevelData = response.data.data.map((type, index) => ({
-            id: `${node.id}-${index + 1}`,
+          currentSecondLevel.value = response.data.data.map((type, index) => ({
+            id: `${kindName}-${index + 1}`,
             label: type.typeName,
-            children: [],
-            parent: node,
           }));
-          node.children = secondLevelData;
         } else {
           ElMessage.error("获取第二层分类数据失败");
         }
@@ -132,38 +139,41 @@ export default defineComponent({
       }
     };
 
-    // 树形节点点击事件
-    const handleNodeClick = async (node) => {
-      // 如果没有子节点，尝试加载第二层数据
-      if (node.children && node.children.length === 0) {
-        await fetchSecondLevelData(node.label, node);
-      }
+    // 获取语料数据
+    const fetchCorpusData = async (kindName, typeName) => {
+      try {
+        const response = await axios.post(apiEndpoints.selecttypecorpus, {
+          kindName,
+          typeName,
+        });
 
-      // 如果是第二层节点，调用接口获取语料数据
-      if (node.parent) {
-        const firstLevelName = node.parent.label;
-        const secondLevelName = node.label;
-
-        try {
-          const response = await axios.post(apiEndpoints.selecttypecorpus, {
-            kindName: firstLevelName,
-            typeName: secondLevelName,
-          });
-
-          if (response.data.code === 200) {
-            corpusData.value = response.data.data; // 显示表格数据
-            errorMessage.value = ""; // 清空错误信息
-          } else {
-            corpusData.value = [];
-            errorMessage.value = `类别 "${secondLevelName}" 中没有语料`;
-          }
-        } catch (error) {
+        if (response.data.code === 200) {
+          corpusData.value = response.data.data;
+          errorMessage.value = "";
+        } else {
           corpusData.value = [];
-          errorMessage.value = `类别 "${secondLevelName}" 中没有语料`;
+          errorMessage.value = `类别 "${typeName}" 中没有语料`;
         }
+      } catch (error) {
+        corpusData.value = [];
+        errorMessage.value = `类别 "${typeName}" 中没有语料`;
       }
     };
 
+    // 点击第一层按钮时加载第二层并保存当前分类值
+    const handleFirstLevelClick = async (node) => {
+      currentFirstLevel.value = node.label; // 保存第一层分类值
+      await fetchSecondLevelData(node.label);
+    };
+
+    // 点击第二层按钮时加载语料数据并传递第一层和第二层值
+    const handleSecondLevelClick = (node) => {
+      const kindName = currentFirstLevel.value; // 从已保存的第一层分类值中获取
+      const typeName = node.label;
+      fetchCorpusData(kindName, typeName);
+    };
+
+    // 菜单选择
     const handleMenuSelect = (index) => {
       activeMenu.value = index;
       router.push({
@@ -172,6 +182,7 @@ export default defineComponent({
       });
     };
 
+    // 退出登录
     const logout = () => {
       axios
           .get(apiEndpoints.logout)
@@ -190,6 +201,7 @@ export default defineComponent({
           });
     };
 
+    // 页面加载时获取分类数据
     onMounted(() => {
       fetchCategories();
     });
@@ -200,14 +212,17 @@ export default defineComponent({
       handleMenuSelect,
       activeMenu,
       treeData,
-      treeProps,
-      handleNodeClick,
+      currentSecondLevel,
+      currentFirstLevel,
       corpusData,
       errorMessage,
+      handleFirstLevelClick,
+      handleSecondLevelClick,
     };
   },
 });
 </script>
+
 
 <style scoped>
 /* 页面布局 */
@@ -217,7 +232,6 @@ export default defineComponent({
   overflow: hidden;
 }
 
-/* 左侧菜单栏 */
 .menu-bar {
   width: 260px;
   background-color: #fff;
@@ -227,15 +241,13 @@ export default defineComponent({
   padding: 20px 0;
 }
 
-/* 菜单项选中状态 */
 .el-menu-item.is-active {
-  background-color: #f0f0f0; /* 设置选中项的背景颜色 */
-  border-radius: 5px; /* 添加圆角效果 */
-  color: #409eff; /* 设置选中项的文字颜色 */
-  font-weight: bold; /* 加粗文字 */
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  color: #409eff;
+  font-weight: bold;
 }
 
-/* LOGO区域 */
 .logo-container {
   display: flex;
   align-items: center;
@@ -248,7 +260,6 @@ export default defineComponent({
   font-weight: bold;
 }
 
-/* 菜单列表 */
 .menu-list {
   flex: 1;
   border-right: none;
@@ -260,19 +271,18 @@ export default defineComponent({
   flex-direction: column;
   padding: 20px;
   background-color: #f5f5f5;
-  overflow: hidden; /* 防止整体区域溢出滚动 */
+  overflow: hidden;
 }
 
 .page-content {
-  flex: 1; /* 使内容区域占据剩余空间 */
-  overflow-y: auto; /* 开启纵向滚动 */
-  background-color: #ffffff; /* 确保有白色背景 */
+  flex: 1;
+  overflow-y: auto;
+  background-color: #ffffff;
   padding: 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 添加视觉分隔感 */
-  border-radius: 5px; /* 可选：圆角样式 */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
 }
 
-/* 工具栏 */
 .toolbar {
   display: flex;
   justify-content: flex-end;
@@ -285,10 +295,9 @@ export default defineComponent({
   align-items: center;
 }
 
-/* 添加间距 */
 .user-info span {
-  margin-right: 15px; /* 设置欢迎文本与按钮之间的间距 */
-  color: black; /* 设置字体颜色为黑色 */
+  margin-right: 15px;
+  color: black;
 }
 
 .custom-button {
@@ -297,6 +306,7 @@ export default defineComponent({
   border: none;
   font-weight: bold;
 }
+
 .custom-button:hover {
   background-color: #409eff !important;
   color: white !important;
@@ -307,17 +317,29 @@ export default defineComponent({
   color: white !important;
 }
 
-/* 树形选择器 */
-.el-tree {
+.button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
   margin-top: 20px;
 }
 
-/* 结果内容区域 */
+.first-level-buttons,
+.second-level-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.el-button {
+  padding: 10px 20px;
+  font-size: 1rem;
+}
+
 .result-content {
   margin-top: 20px;
 }
 
-/* 无数据提示样式 */
 .no-data-message {
   margin-top: 20px;
   color: #999;
@@ -325,9 +347,19 @@ export default defineComponent({
   font-weight: bold;
   text-align: center;
 }
+
 html, body {
   height: 100%;
-  overflow: hidden; /* 禁止全局滚动 */
+  overflow: hidden;
 }
 
+.greeting-container {
+  text-align: center;
+}
+
+h3 {
+  margin-bottom: 15px;
+  text-align: center;
+}
 </style>
+
