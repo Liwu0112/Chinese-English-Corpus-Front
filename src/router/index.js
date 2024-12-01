@@ -6,89 +6,70 @@ import RegularUserEnrollPage from "@/views/regularuser/RegularUserEnrollPage.vue
 import RegularUserSelectByCorpusPage from "@/views/regularuser/RegularUserSelectByCorpusPage.vue";
 import RegularUserSelectByTypePage from "@/views/regularuser/RegularUserSelectByTypePage.vue";
 import RegularUserPersonalCenterPage from "@/views/regularuser/RegularUserPersonalCenterPage.vue";
+import {ElMessage} from "element-plus";
 
-
-// 路由配置
 const routes = [
-    //用户登录
   {
     path: '/',
     name: 'Login',
     component: LoginPage,
   },
-
-
-  //普通用户注册
   {
     path: '/regular_enroll',
     name: 'RegularEnroll',
     component: RegularUserEnrollPage,
   },
-
-
-    //普通用户主页
   {
     path: '/regular_user_home',
     name: 'RegularUserHome',
     component: RegularUserHomePage,
-    meta: { requiresAuth: true }, // 需要登录
+    meta: { requiresAuth: true, role: 'regular_user' },
   },
-
-    //普通用户按语料查询界面
   {
     path: '/regular_user_corpus',
     name: 'RegularUserSelectByCorpus',
     component: RegularUserSelectByCorpusPage,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, role: 'regular_user' },
   },
-
-    //普通用户按分类查找页面
   {
     path: '/regular_user_type',
     name: 'RegularUserSelectByType',
     component: RegularUserSelectByTypePage,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, role: 'regular_user' },
   },
-
-    //普通用户个人中心
   {
     path: '/regular_user_personal_center',
-    name:'RegularUserPersonalCenter',
+    name: 'RegularUserPersonalCenter',
     component: RegularUserPersonalCenterPage,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, role: 'regular_user' },
   },
-    //管理员主页
   {
     path: '/admin_home',
     name: 'AdminHome',
     component: AdminHomePage,
-    meta: { requiresAuth: true }, // 需要登录
-  },
-  {
-
+    meta: { requiresAuth: true, role: 'admin' },
   }
 ];
 
-// 创建路由实例
 const router = createRouter({
   history: createWebHistory(),
   routes,
 });
 
-// 工具函数：检查 cookie 是否存在
 function isAuthenticated() {
-  const cookieName = "cookieName";  //cookieName为cookie名
+  const cookieName = "cookieName";
   return document.cookie.split("; ").some((cookie) => cookie.startsWith(`${cookieName}=`));
 }
 
-// 全局前置守卫
 router.beforeEach((to, from, next) => {
-  // 放行登录页和注册页
+  const role = sessionStorage.getItem('role'); // 获取角色
   if (to.name === 'Login' || to.name === 'RegularEnroll') {
-    next(); // 直接放行
+    next(); // 放行登录和注册页面
   } else if (to.meta.requiresAuth && !isAuthenticated()) {
-    // 如果目标路由需要权限且用户未登录，跳转到登录页面
-    next({ name: 'Login' });
+    next({ name: 'Login' }); // 未登录，跳转到登录页面
+  } else if (to.meta.role && to.meta.role !== role) {
+    ElMessage.error("权限不足");
+    next({ name: 'Login' }); // 权限不匹配，跳转到登录页面
   } else {
     next(); // 继续导航
   }

@@ -81,7 +81,7 @@
 
 <script>
 import {defineComponent, ref} from "vue";
-import {useRouter, useRoute} from "vue-router";
+import {useRouter} from "vue-router";
 import axios from "axios";
 import {ElMessage} from "element-plus";
 import apiEndpoints from "@/apiConfig";
@@ -89,8 +89,7 @@ import apiEndpoints from "@/apiConfig";
 export default defineComponent({
   setup() {
     const router = useRouter();
-    const route = useRoute();
-    const userName = ref(route.query.username);
+    const userName = sessionStorage.getItem("userName");
     const activeMenu = ref("RegularUserPersonalCenter");
 
     const getGreeting = () => {

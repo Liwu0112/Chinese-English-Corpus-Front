@@ -67,15 +67,15 @@ export default {
                   ElMessage.success("登录成功");
                   const userName = response.data.data.userName; // 从返回数据中获取 userName
                   const role = response.data.data.role; // 用户角色
+                  sessionStorage.setItem("userName", userName);
+                  sessionStorage.setItem('role', role); //将用户角色封装在sessionStorage中
                   if (role === "admin") {
                     router.push({
                       name: "AdminHome",
-                      query: { username: userName }, // 通过 query 传递
                     });
                   } else if (role === "regular_user") {
                     router.push({
                       name: "RegularUserHome",
-                      query: { username: userName }, // 通过 query 传递
                     });
                   }
                 } else {

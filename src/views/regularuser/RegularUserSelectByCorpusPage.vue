@@ -83,7 +83,7 @@
 
 <script>
 import { defineComponent, ref } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { useRouter } from "vue-router";
 import axios from "axios";
 import { ElMessage } from "element-plus";
 import apiEndpoints from "@/apiConfig"; // 假设你的接口文件
@@ -91,8 +91,7 @@ import apiEndpoints from "@/apiConfig"; // 假设你的接口文件
 export default defineComponent({
   setup() {
     const router = useRouter();
-    const route = useRoute();
-    const userName = ref(route.query.username);
+    const userName = sessionStorage.getItem("userName");
     const searchText = ref(''); // 搜索框的绑定值
     const displaySearchText = ref(''); // 用于显示的搜索文本
     const searchResult = ref(null); // 存储搜索结果
