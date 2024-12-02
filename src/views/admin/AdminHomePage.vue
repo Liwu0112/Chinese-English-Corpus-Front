@@ -46,15 +46,24 @@
               <el-table-column prop="name" label="名称"  align="center"></el-table-column>
               <el-table-column prop="value" label="数量"  align="center"></el-table-column>
             </el-table>
+
+            <h3>当前语料库中用户数量</h3>
+            <el-table :data="userData" border style="margin-top: 20px;">
+              <el-table-column prop="name" label="名称"  align="center"></el-table-column>
+              <el-table-column prop="value" label="数量"  align="center"></el-table-column>
+            </el-table>
           </el-card>
 
           <el-card class="form-right" shadow="always">
             <h3>各种类对应语料总数</h3>
             <el-table :data="kindCorpusTableData" border style="margin-top: 20px;">
-              <el-table-column prop="kindName" label="种类名称"  align="center"></el-table-column>
-              <el-table-column prop="corpusCount" label="语料总数"  align="center"></el-table-column>
+              <el-table-column prop="kindName" label="种类名称" align="center"></el-table-column>
+              <el-table-column prop="corpusCount" label="语料数" align="center"></el-table-column>
+              <el-table-column prop="onlineCount" label="上线数" align="center"></el-table-column>
+              <el-table-column prop="offlineCount" label="下线数" align="center"></el-table-column>
             </el-table>
           </el-card>
+
         </div>
       </div>
     </main>
@@ -63,7 +72,7 @@
 
 <script>
 import { defineComponent, ref, onMounted } from "vue";
-import { useRouter, useRoute } from "vue-router";
+import { useRouter } from "vue-router";
 import axios from "axios";
 import { ElMessage } from "element-plus";
 import apiEndpoints from "@/apiConfig";
@@ -71,8 +80,7 @@ import apiEndpoints from "@/apiConfig";
 export default defineComponent({
   setup() {
     const router = useRouter();
-    const route = useRoute();
-    const userName = ref(route.query.username);
+    const userName = sessionStorage.getItem("userName");
     const activeMenu = ref("AdminHome");
 
     const getGreeting = () => {
@@ -92,7 +100,6 @@ export default defineComponent({
       activeMenu.value = index;
       router.push({
         name: index,
-        query: { username: userName.value }
       });
     };
 
@@ -114,100 +121,131 @@ export default defineComponent({
         router.push("/");
       });
     };
+
     // 用于存储表格数据的响应式数据
     const tableData = ref([]);
-
     // 定义函数用于调用接口并处理数据展示
-    const getCorpusData = () => {
-      // 调用reselectcountcorpus接口获取语料数
-      axios.get(apiEndpoints.reselectcountcorpus)
-          .then((response) => {
-            const corpusCount = response.data.data;
-            // 调用reselectcountkind接口获取种类数
-            axios.get(apiEndpoints.reselectcountkind)
-                .then((kindResponse) => {
-                  const kindCount = kindResponse.data.data;
-                  // 调用reselectcounttype接口获取分类数
-                  axios.get(apiEndpoints.reselectcounttype)
-                      .then((typeResponse) => {
-                        const typeCount = typeResponse.data.data;
+    const getCorpusData = async () => {
+      try {
+        // 使用 Promise.all 并行发起多个请求
+        const [corpusResponse, kindResponse, typeResponse] = await Promise.all([
+          axios.get(apiEndpoints.selectallcors),
+          axios.get(apiEndpoints.selectallkind),
+          axios.get(apiEndpoints.selectalltype),
+        ]);
 
-                        // 创建表格数据
-                        tableData.value = [
-                          {
-                            name: '语料数',
-                            value: corpusCount
-                          },
-                          {
-                            name: '种类数',
-                            value: kindCount
-                          },
-                          {
-                            name: '分类数',
-                            value: typeCount
-                          }
-                        ];
-                      })
-                      .catch((typeError) => {
-                        ElMessage.error('获取分类数失败，请稍后重试');
-                        console.error(typeError);
-                      });
-                })
-                .catch((kindError) => {
-                  ElMessage.error('获取种类数失败，请稍后重试');
-                  console.error(kindError);
-                });
-          })
-          .catch((corpusError) => {
-            ElMessage.error('获取语料数失败，请稍后重试');
-            console.error(corpusError);
-          });
+        // 提取返回的数据
+        const corpusCount = corpusResponse.data.data;
+        const kindCount = kindResponse.data.data;
+        const typeCount = typeResponse.data.data;
+
+        // 创建表格数据
+        tableData.value = [
+          {
+            name: '语料数',
+            value: corpusCount,
+          },
+          {
+            name: '种类数',
+            value: kindCount,
+          },
+          {
+            name: '分类数',
+            value: typeCount,
+          },
+        ];
+      } catch (error) {
+        // 统一错误处理
+        ElMessage.error('获取数据失败，请稍后重试');
+      }
     };
+
+    const userData = ref([]);
+    // 定义函数用于调用接口并处理数据展示
+    const getUserData = async () => {
+      try {
+        // 使用 Promise.all 并行发起多个请求
+        const [userResponse] = await Promise.all([
+          axios.get(apiEndpoints.selectreusercount),
+        ]);
+
+        // 提取返回的数据
+        const userCount = userResponse.data.data;
+
+        // 创建表格数据
+        userData.value = [
+          {
+            name: '普通用户数',
+            value: userCount,
+          },
+        ];
+      } catch (error) {
+        // 统一错误处理
+        ElMessage.error('获取数据失败，请稍后重试');
+      }
+    };
+
     const kindCorpusTableData = ref([]);
     const getKindCorpusData = () => {
-      // 先调用selectkindsname接口获取种类名称数据
       axios.get(apiEndpoints.selectkindsname)
           .then((selectKindsResponse) => {
             const kindsData = selectKindsResponse.data.data;
-            const kindCorpusDataPromises = kindsData.map(kind => {
-              // 对于每个种类名称，调用rescorpusbykindname接口获取对应语料总数
-              return axios.get(`${apiEndpoints.rescorpusbykindname}?kindName=${kind.kindName}`)
-                  .then((corpusByKindResponse) => {
+
+            const kindCorpusDataPromises = kindsData.map((kind) => {
+              // 获取种类对应的语料总数、上线数和下线数
+              return Promise.all([
+                axios.get(`${apiEndpoints.selectKindcors}?kindName=${kind.kindName}`),
+                axios.get(`${apiEndpoints.selectonlinebykindname}?kindName=${kind.kindName}`),
+                axios.get(`${apiEndpoints.selectofflinebykindname}?kindName=${kind.kindName}`),
+              ])
+                  .then(([corpusRes, onlineRes, offlineRes]) => {
                     return {
                       kindName: kind.kindName,
-                      corpusCount: corpusByKindResponse.data.data
+                      corpusCount: corpusRes.data.data || 0,
+                      onlineCount: onlineRes.data.data || 0,
+                      offlineCount: offlineRes.data.data || 0,
                     };
                   })
-                  .catch((error) => {
-                    ElMessage.error(`获取${kind.kindName}种类对应语料总数失败，请稍后重试`);
-                    console.error(error);
+                  .catch(() => {
+                    ElMessage.error(`获取${kind.kindName}种类的统计数据失败，请稍后重试`);
                     return {
                       kindName: kind.kindName,
-                      corpusCount: 0
+                      corpusCount: 0,
+                      onlineCount: 0,
+                      offlineCount: 0,
                     };
                   });
             });
 
-            // 等待所有种类对应语料总数的请求都完成
-            Promise.all(kindCorpusDataPromises)
-                .then((results) => {
-                  kindCorpusTableData.value = results;
-                });
+            // 等待所有种类统计数据的请求完成
+            Promise.all(kindCorpusDataPromises).then((results) => {
+              kindCorpusTableData.value = results;
+              const totalCorpusCount = kindCorpusTableData.value.reduce((acc, item) => acc + item.corpusCount, 0);
+              // 计算上线数的总和
+              const totalOnlineCount = kindCorpusTableData.value.reduce((acc, item) => acc + item.onlineCount, 0);
+              // 计算下线数的总和
+              const totalOfflineCount = kindCorpusTableData.value.reduce((acc, item) => acc + item.offlineCount, 0);
+
+              // 将总数添加到kindCorpusTableData数组中作为新的一行数据
+              kindCorpusTableData.value.push({
+                kindName: '总数',
+                corpusCount: totalCorpusCount,
+                onlineCount: totalOnlineCount,
+                offlineCount: totalOfflineCount
+              });
+            });
           })
-          .catch((selectKindsError) => {
+
+          .catch(() => {
             ElMessage.error('获取种类名称数据失败，请稍后重试');
-            console.error(selectKindsError);
           });
-    }
-
-
+    };
     // 在页面挂载完成后调用接口获取数据函数
     onMounted(() => {
       getCorpusData();
       getKindCorpusData();
+      getUserData()
     });
-
-
     return {
       userName,
       logout,
@@ -215,7 +253,9 @@ export default defineComponent({
       activeMenu,
       greeting,
       tableData,
-      kindCorpusTableData
+      kindCorpusTableData,
+      getUserData,
+      userData
     };
   }
 });

@@ -112,8 +112,7 @@ export default defineComponent({
     const handleMenuSelect = (index) => {
       activeMenu.value = index;
       router.push({
-        name: index,
-        query: {username: userName.value}
+        name: index
       });
     };
 
@@ -141,12 +140,13 @@ export default defineComponent({
         return;
       }
       axios.post(apiEndpoints.updateusername, {
-        userName: userName.value,
+        userName: userName,
         userNewName: userNewName.value
       }).then((response) => {
         if (response.data.code === 200) {
+          sessionStorage.setItem("userName", userNewName.value);
           ElMessage.success("账户修改成功");
-          userName.value = userNewName.value;
+          router.go(0);
           userNewName.value = "";
         } else {
           userNewName.value = "";
