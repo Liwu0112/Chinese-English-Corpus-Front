@@ -172,7 +172,7 @@
 import {defineComponent, ref, onMounted, computed} from 'vue';
 import {useRouter} from 'vue-router';
 import axios from 'axios';
-import {ElMessage} from 'element-plus';
+import {ElMessage, ElMessageBox} from 'element-plus';
 import apiEndpoints from '@/apiConfig';
 
 export default defineComponent({
@@ -260,25 +260,45 @@ export default defineComponent({
 
     // 删除语料
     const deleteCorpus = (row) => {
-      ElMessage.confirm('确定要删除该语料吗?', '删除语料', {
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }).then(async () => {
-        try {
-          const response = await axios.delete(`${apiEndpoints.deleteCorpus}/${row.corpusId}`);
-          if (response.data.code === 200) {
-            ElMessage.success('删除成功');
-            fetchCorpusData(); // 删除后重新加载数据
-          } else {
-            ElMessage.error('删除失败');
+   ElMessageBox.confirm(
+    '确定要删除该语料吗?',
+    '删除提示',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  )
+    .then(async () => {
+      try {
+        // 添加日志来调试
+        console.log('正在删除语料，ID:', row.corpusId);
+        console.log('删除API地址:', apiEndpoints.deleteCorpus);
+        
+        // 确保使用完整的URL和正确的请求参数
+        const response = await axios.get(apiEndpoints.deleteCorpus, {
+          params: {
+            corpusId: row.corpusId
           }
-        } catch (error) {
-          ElMessage.error('删除失败，请稍后重试');
+        });
+        
+        console.log('删除响应:', response); // 调试日志
+        
+        if (response.data.code === 200) {
+          ElMessage.success('删除成功');
+          await fetchCorpusData(); // 删除后重新加载数据
+        } else {
+          ElMessage.error(response.data.msg || '删除失败');
         }
-      }).catch(() => {
-      });
-    };
+      } catch (error) {
+        console.error('删除请求失败:', error);
+        ElMessage.error('删除失败，请稍后重试');
+      }
+    })
+    .catch(() => {
+      ElMessage.info('已取消删除');
+    });
+};
 
     const editDialogVisible = ref(false);
     const editForm = ref({
@@ -339,25 +359,29 @@ export default defineComponent({
       editForm.value.typeName = ''; // 清空已选择的分类
       fetchTypeOptions(value); // 获取新的分类列表
     };
+    const originalFormData = ref({});
 
-// 修改编辑语料函数
-// 修改编辑语料函数
     const editCorpus = async (row) => {
-      editDialogVisible.value = true;
-      // 先获取所有种类
-      await fetchKindOptions();
-      // 设置表单数据
-      editForm.value = {
-        corpusId: row.corpusId,
-        chineseText: row.chineseText,
-        englishText: row.englishText,
-        kindName: row.kindName,
-        typeName: row.typeName,
-        corpusStatus: row.corpusStatus.value
-      };
-      // 根据当前种类获取分类列表
-      await fetchTypeOptions(row.kindName);
-    };
+  editDialogVisible.value = true;
+  // 先获取所有种类
+  await fetchKindOptions();
+  
+  // 保存原始数据
+  originalFormData.value = {
+    corpusId: row.corpusId,
+    chineseText: row.chineseText,
+    englishText: row.englishText,
+    kindName: row.kindName,
+    typeName: row.typeName,
+    corpusStatus: row.corpusStatus
+  };
+  
+  // 设置表单数据
+  editForm.value = { ...originalFormData.value };
+  
+  // 根据当前种类获取分类列表
+  await fetchTypeOptions(row.kindName);
+};
 
 // 处理对话框关闭
     const handleClose = () => {
@@ -366,20 +390,33 @@ export default defineComponent({
     };
 
 // 提交编辑
-    const submitEdit = async () => {
-      try {
-        const response = await axios.put(apiEndpoints.updateCorpus, editForm.value);
-        if (response.data.code === 200) {
-          ElMessage.success('修改成功');
-          editDialogVisible.value = false;
-          fetchCorpusData(); // 刷新数据
-        } else {
-          ElMessage.error('修改失败');
-        }
-      } catch (error) {
-        ElMessage.error('修改失败，请稍后重试');
-      }
-    };
+const submitEdit = async () => {
+  // 检查数据是否发生变化
+  const isDataUnchanged = 
+    editForm.value.chineseText === originalFormData.value.chineseText &&
+    editForm.value.englishText === originalFormData.value.englishText &&
+    editForm.value.kindName === originalFormData.value.kindName &&
+    editForm.value.typeName === originalFormData.value.typeName &&
+    editForm.value.corpusStatus === originalFormData.value.corpusStatus;
+
+  if (isDataUnchanged) {
+    ElMessage.warning('数据未发生修改');
+    return;
+  }
+
+  try {
+    const response = await axios.post(apiEndpoints.updatecorpus, editForm.value);
+    if (response.data.code === 200) {
+      ElMessage.success('修改成功');
+      editDialogVisible.value = false;
+      fetchCorpusData(); // 刷新数据
+    } else {
+      ElMessage.error('修改失败');
+    }
+  } catch (error) {
+    ElMessage.error('修改失败，请稍后重试');
+  }
+};
 
     // 初始化数据
     onMounted(() => {
@@ -409,6 +446,7 @@ export default defineComponent({
       kindOptions,
       typeOptions,
       handleKindChange,
+      originalFormData
     };
   },
 });

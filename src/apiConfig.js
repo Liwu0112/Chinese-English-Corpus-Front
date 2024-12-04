@@ -33,6 +33,8 @@ const apiEndpoints = {
     selectallcors: `${baseUrlA}/selectallcors`,   //所有语料
     selectallkind: `${baseUrlA}/selectallkind`,  //管理员查看所有种类
     selectalltype: `${baseUrlA}/selectalltype`, //管理员根据种类名查分类
+    updatecorpus: `${baseUrlA}/updatecorpus` ,//管理员修改语料
+    deleteCorpus: `${baseUrlA}/deletecorpus`, //管理员删除语料
 
 
 }
