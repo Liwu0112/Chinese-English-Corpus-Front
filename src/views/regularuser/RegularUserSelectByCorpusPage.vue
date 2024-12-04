@@ -202,6 +202,7 @@ export default defineComponent({
   flex: 1;
   border-right: none;
 }
+
 /* 菜单项选中状态 */
 .el-menu-item.is-active {
   background-color: #f0f0f0; /* 设置选中项的背景颜色 */

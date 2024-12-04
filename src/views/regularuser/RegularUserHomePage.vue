@@ -27,9 +27,6 @@
     <!-- 内容区域 -->
     <main class="content-area">
       <div class="toolbar">
-        <el-button type="text" size="mini" @click="toggleTheme">
-          <i :class="themeIcon"></i>
-        </el-button>
         <div class="user-info">
           <span>欢迎您，{{userName}}</span>
           <el-button type="text" class="custom-button" size="mini" @click="logout">点击退出</el-button>

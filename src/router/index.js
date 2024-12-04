@@ -7,6 +7,10 @@ import RegularUserSelectByCorpusPage from "@/views/regularuser/RegularUserSelect
 import RegularUserSelectByTypePage from "@/views/regularuser/RegularUserSelectByTypePage.vue";
 import RegularUserPersonalCenterPage from "@/views/regularuser/RegularUserPersonalCenterPage.vue";
 import {ElMessage} from "element-plus";
+import AdminControllerCorpus from "@/views/admin/AdminControllerCorpus.vue";
+import AdminControllerKinds from "@/views/admin/AdminControllerKinds.vue";
+import AdminPersonCenter from "@/views/admin/AdminPersonCenter.vue";
+import AdminControllerUsers from "@/views/admin/AdminControllerUsers.vue";
 
 const routes = [
   {
@@ -43,12 +47,39 @@ const routes = [
     component: RegularUserPersonalCenterPage,
     meta: { requiresAuth: true, role: 'regular_user' },
   },
+
+
   {
     path: '/admin_home',
     name: 'AdminHome',
     component: AdminHomePage,
     meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin_con_corpus',
+    name: 'AdminControllerCorpus',
+    component: AdminControllerCorpus,
+    meta: { requiresAuth: true, role: 'admin' },
+  } ,
+  {
+    path: '/admin_con_kinds',
+    name: 'AdminControllerKinds',
+    component: AdminControllerKinds,
+    meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin_con_con_users',
+    name: 'AdminConUsers',
+    component: AdminControllerUsers,
+    meta: {requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin_con_personal_center',
+    name: 'AdminPersonalCenter',
+    component: AdminPersonCenter,
+    meta: { requiresAuth: true, role: 'admin' },
   }
+
 ];
 
 const router = createRouter({

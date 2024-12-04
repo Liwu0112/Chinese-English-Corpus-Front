@@ -10,26 +10,26 @@
           <i class="el-icon-document"></i>
           <span>首页</span>
         </el-menu-item>
-        <el-menu-item index="RegularUserSelectByCorpus">
-          <i class="el-icon-dollar"></i>
-          <span>语料搜索</span>
+        <el-menu-item index="AdminControllerCorpus">
+          <i class="el-icon-document"></i>
+          <span>语料管理</span>
         </el-menu-item>
-        <el-menu-item index="RegularUserSelectByType">
-          <i class="el-icon-shopping-cart"></i>
-          <span>分类查找</span>
+        <el-menu-item index="AdminControllerCorpus">
+          <i class="el-icon-document"></i>
+          <span>分类管理</span>
         </el-menu-item>
-        <el-menu-item index="RegularUserPersonalCenter">
-          <i class="el-icon-tickets"></i>
-          <span>个人中心</span>
-        </el-menu-item>
+        <el-menu-item index="AdminControllerCorpus">
+          <i class="el-icon-document"></i>
+          <span>用户管理</span>
+        </el-menu-item> <el-menu-item index="AdminControllerCorpus">
+        <i class="el-icon-document"></i>
+        <span>个人中心</span>
+      </el-menu-item>
       </el-menu>
     </aside>
     <!-- 内容区域 -->
     <main class="content-area">
       <div class="toolbar">
-        <el-button type="text" size="mini" @click="toggleTheme">
-          <i :class="themeIcon"></i>
-        </el-button>
         <div class="user-info">
           <span>欢迎您，{{userName}}</span>
           <el-button type="text" class="custom-button" size="mini" @click="logout">点击退出</el-button>
@@ -129,9 +129,9 @@ export default defineComponent({
       try {
         // 使用 Promise.all 并行发起多个请求
         const [corpusResponse, kindResponse, typeResponse] = await Promise.all([
-          axios.get(apiEndpoints.selectallcors),
-          axios.get(apiEndpoints.selectallkind),
-          axios.get(apiEndpoints.selectalltype),
+          axios.get(apiEndpoints.selectallcorscount),
+          axios.get(apiEndpoints.selectallkindcount),
+          axios.get(apiEndpoints.selectalltypecount),
         ]);
 
         // 提取返回的数据

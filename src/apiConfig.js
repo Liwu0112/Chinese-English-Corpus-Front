@@ -23,13 +23,16 @@ const apiEndpoints = {
 
 
     //管理员
-    selectallcors: `${baseUrlA}/selectallcors`,   //管理员查询语料总数
-    selectallkind: `${baseUrlA}/selectallkind`,   //管理员查询种类总数
-    selectalltype: `${baseUrlA}/selectalltype`,   //管理员查询分类总数
-    selectKindcors: `${baseUrlA}/selectKindcors`,
+    selectallcorscount: `${baseUrlA}/selectallcorscount`,   //管理员查询语料总数
+    selectallkindcount: `${baseUrlA}/selectallkindcount`,   //管理员查询种类总数
+    selectalltypecount: `${baseUrlA}/selectalltypecount`,   //管理员查询分类总数
+    selectKindcors: `${baseUrlA}/selectKindcors`,   //查看种类下语料数
     selectonlinebykindname: `${baseUrlA}/selectonlinebykindname`, //查询当前种类中语料上线数
     selectofflinebykindname: `${baseUrlA}/selectofflinebykindname`, //查询当前种类中语料上线数
-    selectreusercount: `${baseUrlA}/selectreusercount`,
+    selectreusercount: `${baseUrlA}/selectreusercount`,  //用户总数
+    selectallcors: `${baseUrlA}/selectallcors`,   //所有语料
+    selectallkind: `${baseUrlA}/selectallkind`,  //管理员查看所有种类
+    selectalltype: `${baseUrlA}/selectalltype`, //管理员根据种类名查分类
 
 
 }
