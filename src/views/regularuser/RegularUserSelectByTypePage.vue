@@ -184,7 +184,7 @@ export default defineComponent({
     // 退出登录
     const logout = () => {
       axios
-          .get(apiEndpoints.logout)
+          .post(apiEndpoints.logout)
           .then((response) => {
             if (response.data.code === 200) {
               ElMessage.success("退出成功");

@@ -104,7 +104,7 @@ export default defineComponent({
     };
 
     const logout = () => {
-      axios.get(apiEndpoints.logout).then((response) => {
+      axios.post(apiEndpoints.logout).then((response) => {
         if (response.data.code === 200) {
           ElMessage.success("退出成功");
           router.push("/");

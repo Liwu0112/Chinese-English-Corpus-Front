@@ -26,8 +26,6 @@ const apiEndpoints = {
     selectallcors: `${baseUrlA}/selectallcors`,   //管理员查询语料总数
     selectallkind: `${baseUrlA}/selectallkind`,   //管理员查询种类总数
     selectalltype: `${baseUrlA}/selectalltype`,   //管理员查询分类总数
-    selectallonlinecors: `${baseUrlA}/selectallonlinecors`, //管理员查询上线数
-    selectallline: `${baseUrlA}/selectallline`,   //管理员查看下线数
     selectKindcors: `${baseUrlA}/selectKindcors`,
     selectonlinebykindname: `${baseUrlA}/selectonlinebykindname`, //查询当前种类中语料上线数
     selectofflinebykindname: `${baseUrlA}/selectofflinebykindname`, //查询当前种类中语料上线数
