@@ -36,21 +36,115 @@
         </div>
       </div>
       <div class="page-content">
-        <div class="greeting-container">
-          <p style="font-size: 1.5rem; font-weight: bold;">{{greeting}}, {{userName}}! 欢迎来到分类管理页面！</p>
+        <div class="table-container">
+          <div class="table-header">
+            <el-button type="primary" @click="handleAdd">新增分类</el-button>
+          </div>
+          <el-table :data="paginatedData" style="width: 80%; margin: 0 auto;" border>
+            <el-table-column prop="typeId" label="分类编号" width="180" />
+            <el-table-column prop="kindName" label="种类" width="180" />
+            <el-table-column prop="typeName" label="分类" />
+            <el-table-column label="操作" width="200">
+              <template #default="scope">
+                <el-button 
+                  type="primary" 
+                  size="small" 
+                  @click="handleEdit(scope.row)"
+                >
+                  修改
+                </el-button>
+                <el-button 
+                  type="danger" 
+                  size="small" 
+                  @click="handleDelete(scope.row)"
+                >
+                  删除
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
         </div>
-        <div class="forms-container">
+        
+        <div class="pagination-container">
+          <el-pagination
+            background
+            layout="prev, pager, next"
+            :total="typeList.length"
+            :page-size="pageSize"
+            :current-page="currentPage"
+            @current-change="handleCurrentChange"
+          />
         </div>
+        
+        <!-- 添加新增弹出框 -->
+        <el-dialog
+          v-model="addDialogVisible"
+          title="新增分类"
+          width="30%"
+          :close-on-click-modal="false"
+        >
+          <el-form :model="addForm" label-width="80px">
+            <el-form-item label="种类">
+              <el-select v-model="addForm.kindName" placeholder="请选择种类">
+                <el-option
+                  v-for="item in kindOptions"
+                  :key="item.kindId"
+                  :label="item.kindName"
+                  :value="item.kindName"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="分类">
+              <el-input v-model="addForm.typeName" />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <span class="dialog-footer">
+              <el-button @click="addDialogVisible = false">取消</el-button>
+              <el-button type="primary" @click="submitAdd">确定</el-button>
+            </span>
+          </template>
+        </el-dialog>
+        
+        <!-- 添加修改弹出框 -->
+        <el-dialog
+          v-model="editDialogVisible"
+          title="修改分类信息"
+          width="30%"
+          :close-on-click-modal="false"
+        >
+          <el-form :model="editForm" label-width="80px">
+            <el-form-item label="种类">
+              <el-select v-model="editForm.kindName" placeholder="请选择种类">
+                <el-option
+                  v-for="item in kindOptions"
+                  :key="item.kindId"
+                  :label="item.kindName"
+                  :value="item.kindName"
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="分类">
+              <el-input v-model="editForm.typeName" />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <span class="dialog-footer">
+              <el-button @click="editDialogVisible = false">取消</el-button>
+              <el-button type="primary" @click="submitEdit">确定</el-button>
+            </span>
+          </template>
+        </el-dialog>
       </div>
     </main>
   </div>
 </template>
 
 <script>
-import {defineComponent, ref} from "vue";
+import {defineComponent, ref, onMounted, computed} from "vue";
 import {useRouter} from "vue-router";
 import axios from "axios";
-import {ElMessage} from "element-plus";
+import {ElMessage, ElMessageBox} from "element-plus";
 import apiEndpoints from "@/apiConfig";
 
 export default defineComponent({
@@ -98,12 +192,174 @@ export default defineComponent({
       });
     };
 
+    const typeList = ref([]);
+
+    const getAllTypes = async () => {
+      try {
+        const response = await axios.get(apiEndpoints.selectalltypes);
+        if (response.data.code === 200) {
+          typeList.value = response.data.data;
+        } else {
+          ElMessage.error(response.data.msg || "获取分类数据失败");
+        }
+      } catch (error) {
+        ElMessage.error("获取分类数据失败，请稍后重试");
+        console.error(error);
+      }
+    };
+
+    const editDialogVisible = ref(false);
+    const editForm = ref({
+      typeId: '',
+      kindName: '',
+      typeName: ''
+    });
+
+    const handleEdit = (row) => {
+      editForm.value = { ...row };
+      editDialogVisible.value = true;
+    };
+
+    const submitEdit = async () => {
+      try {
+        const response = await axios.post(apiEndpoints.updatetype, editForm.value);
+        if (response.data.code === 200) {
+          ElMessage.success('修改成功');
+          editDialogVisible.value = false;
+          getAllTypes(); // 刷新表格数据
+        } else {
+          ElMessage.error(response.data.msg || '修改失��');
+        }
+      } catch (error) {
+        ElMessage.error('修改失败，请稍后重试');
+        console.error(error);
+      }
+    };
+
+    const handleDelete = (row) => {
+      ElMessageBox.confirm(
+        `确定要删除分类 "${row.typeName}" 吗？`,
+        '删除确认',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning',
+        }
+      ).then(async () => {
+        try {
+          const response = await axios.get(apiEndpoints.deletetype, {
+            params: {
+              typeId: row.typeId
+            }
+          });
+          if (response.data.code === 200) {
+            ElMessage.success('删除成功');
+            getAllTypes(); // 刷新表格数据
+          } else {
+            ElMessage.error(response.data.msg || '删除失败');
+          }
+        } catch (error) {
+          ElMessage.error('删除失败，请稍后重试');
+          console.error(error);
+        }
+      }).catch(() => {
+        // 用户点击取消，不做任操作
+      });
+    };
+
+    const kindOptions = ref([]);
+
+    // 获取所有种类选项
+    const getAllKinds = async () => {
+      try {
+        const response = await axios.get(apiEndpoints.selectallkind);
+        if (response.data.code === 200) {
+          kindOptions.value = response.data.data;
+        } else {
+          ElMessage.error(response.data.msg || "获取种类数据失败");
+        }
+      } catch (error) {
+        ElMessage.error("获取种类数据失败，请稍后重试");
+        console.error(error);
+      }
+    };
+
+    // 在组件挂载时获取种类数据
+    onMounted(() => {
+      getAllTypes();
+      getAllKinds(); // 添加获取种类数据
+    });
+
+    // 添加新的响应式变量
+    const addDialogVisible = ref(false);
+    const addForm = ref({
+      kindName: '',
+      typeName: ''
+    });
+
+    // 添加新增按钮处理函数
+    const handleAdd = () => {
+      addForm.value = {
+        kindName: '',
+        typeName: ''
+      };
+      addDialogVisible.value = true;
+    };
+
+    // 添加提交新增的处理函数
+    const submitAdd = async () => {
+      try {
+        const response = await axios.post(apiEndpoints.inserttype, addForm.value);
+        if (response.data.code === 200) {
+          ElMessage.success('添加成功');
+          addDialogVisible.value = false;
+          getAllTypes(); // 刷新表格数据
+        } else {
+          ElMessage.error('当前分类已存在');
+        }
+      } catch (error) {
+        ElMessage.error('添加失败，请稍后重试');
+        console.error(error);
+      }
+    };
+
+    // 添加分页相关的响应式变量
+    const currentPage = ref(1);
+    const pageSize = ref(15);
+
+    // 计算当前页显示的数据
+    const paginatedData = computed(() => {
+      const start = (currentPage.value - 1) * pageSize.value;
+      const end = start + pageSize.value;
+      return typeList.value.slice(start, end);
+    });
+
+    // 处理页码改变
+    const handleCurrentChange = (val) => {
+      currentPage.value = val;
+    };
+
     return {
       userName,
       logout,
       handleMenuSelect,
       activeMenu,
       greeting,
+      typeList,
+      handleEdit,
+      handleDelete,
+      editDialogVisible,
+      editForm,
+      submitEdit,
+      kindOptions,
+      addDialogVisible,
+      addForm,
+      handleAdd,
+      submitAdd,
+      currentPage,
+      pageSize,
+      paginatedData,
+      handleCurrentChange,
     };
   }
 });
@@ -218,5 +474,68 @@ h3 {
 .custom-button:active {
   background-color: #409eff !important;
   color: white !important;
+}
+
+.table-container {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+/* 添加按钮间距 */
+.el-button + .el-button {
+  margin-left: 10px;
+}
+
+/* 操作按钮样式 */
+.el-button--small {
+  padding: 8px 15px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* 弹窗表单样式 */
+:deep(.el-form-item__label) {
+  font-weight: bold;
+}
+
+:deep(.el-input__inner) {
+  width: 100%;
+}
+
+/* 下拉选择框样式 */
+:deep(.el-select) {
+  width: 100%;
+}
+
+/* 添加新样式 */
+.table-header {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: flex-end;
+  width: 80%;
+  margin: 0 auto 20px auto;
+}
+
+.table-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  width: 80%;
+  margin: 20px auto;
 }
 </style>

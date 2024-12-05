@@ -41,40 +41,41 @@
           <p style="font-size: 1.5rem; font-weight: bold;">请选择要查看的分类</p>
         </div>
 
-        <!-- 横向按钮组 -->
-        <div class="button-container">
-          <div class="first-level-buttons">
-            <el-button
-                v-for="(node) in treeData"
-                :key="node.id"
-                type="primary"
-                plain
-                @click="handleFirstLevelClick(node)"
-            >
-              {{ node.label }}
-            </el-button>
-          </div>
-          <div class="second-level-buttons" v-if="currentSecondLevel.length > 0">
-            <el-button
-                v-for="(node) in currentSecondLevel"
-                :key="node.id"
-                type="success"
-                plain
-                @click="handleSecondLevelClick(node)"
-            >
-              {{ node.label }}
-            </el-button>
-          </div>
+        <!-- 将按钮组改为级联菜单 -->
+        <div class="menu-container">
+          <el-menu mode="horizontal" class="category-menu">
+            <el-sub-menu v-for="node in treeData" :key="node.id" :index="node.id.toString()">
+              <template #title>{{ node.label }}</template>
+              <el-menu-item 
+                v-for="subNode in getSecondLevelData(node.label)" 
+                :key="subNode.id"
+                @click="handleSecondLevelClick(node.label, subNode.label)"
+              >
+                {{ subNode.label }}
+              </el-menu-item>
+            </el-sub-menu>
+          </el-menu>
         </div>
 
         <!-- 数据表格/提示信息 -->
         <div class="result-content">
-          <el-table v-if="corpusData.length > 0" :data="corpusData" border style="margin-top: 20px;">
+          <el-table v-if="corpusData.length > 0" :data="paginatedData" border style="margin-top: 20px;">
             <el-table-column prop="chineseText" label="中文内容" align="center"></el-table-column>
             <el-table-column prop="englishText" label="英文内容" align="center"></el-table-column>
             <el-table-column prop="kindName" label="种类名称" align="center"></el-table-column>
             <el-table-column prop="typeName" label="分类名称" align="center"></el-table-column>
           </el-table>
+
+          <!-- ���加分页器 -->
+          <div class="pagination-container" v-if="corpusData.length > 0">
+            <el-pagination
+              v-model:current-page="currentPage"
+              :page-size="13"
+              :total="corpusData.length"
+              layout="total, prev, pager, next"
+              @current-change="handleCurrentChange"
+            />
+          </div>
 
           <div v-else class="no-data-message">
             <span v-if="errorMessage">{{ errorMessage }}</span>
@@ -86,7 +87,7 @@
 </template>
 
 <script>
-import { defineComponent, ref, onMounted } from "vue";
+import { defineComponent, ref, onMounted, computed } from "vue";
 import { useRouter} from "vue-router";
 import axios from "axios";
 import { ElMessage } from "element-plus";
@@ -99,10 +100,26 @@ export default defineComponent({
 
     const activeMenu = ref("RegularUserSelectByType");
     const treeData = ref([]); // 第一层数据
-    const currentSecondLevel = ref([]); // 当前显示的第二层数据
-    const currentFirstLevel = ref(""); // 当前选中的第一层分类值
     const corpusData = ref([]); // 表格数据
     const errorMessage = ref("");
+
+    // 存储所有二级菜单数据的映射
+    const secondLevelDataMap = ref(new Map());
+
+    // 添加分页相关的响应式变量
+    const currentPage = ref(1);
+
+    // 处页码改变
+    const handleCurrentChange = (val) => {
+      currentPage.value = val;
+    };
+
+    // 计算当前页显示的数据
+    const paginatedData = computed(() => {
+      const startIndex = (currentPage.value - 1) * 13;
+      const endIndex = startIndex + 13;
+      return corpusData.value.slice(startIndex, endIndex);
+    });
 
     // 获取分类数据
     const fetchCategories = async () => {
@@ -121,21 +138,31 @@ export default defineComponent({
       }
     };
 
-    // 获取第二层分类数据
+    // 获取第二层分类数据的方法修改
     const fetchSecondLevelData = async (kindName) => {
       try {
         const response = await axios.post(`${apiEndpoints.selecttnbykn}?kindName=${kindName}`);
         if (response.data.code === 200) {
-          currentSecondLevel.value = response.data.data.map((type, index) => ({
+          const secondLevelData = response.data.data.map((type, index) => ({
             id: `${kindName}-${index + 1}`,
             label: type.typeName,
           }));
+          secondLevelDataMap.value.set(kindName, secondLevelData);
         } else {
           ElMessage.error("获取第二层分类数据失败");
         }
       } catch (error) {
         ElMessage.error("请求失败，请稍后重试");
       }
+    };
+
+    // 获取特定一级分类下的二分类数据
+    const getSecondLevelData = (kindName) => {
+      if (!secondLevelDataMap.value.has(kindName)) {
+        fetchSecondLevelData(kindName);
+        return [];
+      }
+      return secondLevelDataMap.value.get(kindName) || [];
     };
 
     // 获取语料数据
@@ -149,6 +176,7 @@ export default defineComponent({
         if (response.data.code === 200) {
           corpusData.value = response.data.data;
           errorMessage.value = "";
+          currentPage.value = 1; // 重置到第一页
         } else {
           corpusData.value = [];
           errorMessage.value = `类别 "${typeName}" 中没有语料`;
@@ -159,16 +187,8 @@ export default defineComponent({
       }
     };
 
-    // 点击第一层按钮时加载第二层并保存当前分类值
-    const handleFirstLevelClick = async (node) => {
-      currentFirstLevel.value = node.label; // 保存第一层分类值
-      await fetchSecondLevelData(node.label);
-    };
-
-    // 点击第二层按钮时加载语料数据并传递第一层和第二层值
-    const handleSecondLevelClick = (node) => {
-      const kindName = currentFirstLevel.value; // 从已保存的第一层分类值中获取
-      const typeName = node.label;
+    // 修改二级菜单点击处理方法
+    const handleSecondLevelClick = (kindName, typeName) => {
       fetchCorpusData(kindName, typeName);
     };
 
@@ -211,12 +231,13 @@ export default defineComponent({
       handleMenuSelect,
       activeMenu,
       treeData,
-      currentSecondLevel,
-      currentFirstLevel,
       corpusData,
       errorMessage,
-      handleFirstLevelClick,
+      getSecondLevelData,
       handleSecondLevelClick,
+      currentPage,
+      handleCurrentChange,
+      paginatedData,
     };
   },
 });
@@ -316,24 +337,19 @@ export default defineComponent({
   color: white !important;
 }
 
-.button-container {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin-top: 20px;
-}
-
+.button-container,
 .first-level-buttons,
 .second-level-buttons {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
+  display: none;
 }
-.second-level-buttons {
+
+.menu-container {
+  margin: 20px 0;
+}
+
+.category-menu {
   display: flex;
-  gap: 10px;
   justify-content: center;
-  flex-wrap: wrap;
 }
 
 .result-content {
@@ -360,6 +376,20 @@ html, body {
 h3 {
   margin-bottom: 15px;
   text-align: center;
+}
+
+/* 添加跳转相关样式 */
+.jump-container,
+.jump-input {
+  display: none;
+}
+
+/* 保留分页器容器样式 */
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>
 

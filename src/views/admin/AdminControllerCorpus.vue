@@ -31,15 +31,23 @@
 
     <!-- 内容区域 -->
     <main class="content-area">
-      <div class="toolbar" style="justify-content: space-between;">
-        <el-button type="primary" @click="openAddDialog">新增语料</el-button>
-        <el-button type="primary" @click="openBatchAddDialog">批量新增</el-button>
+      <div class="toolbar">
         <div class="user-info">
-          <span>欢迎您，{{ userName }}</span>
+          <span>欢迎您，{{userName}}</span>
           <el-button type="text" class="custom-button" size="mini" @click="logout">点击退出</el-button>
         </div>
       </div>
       <div class="page-content">
+        <div class="button-group">
+          <el-button type="primary" class="action-button" @click="openAddDialog">
+            <i class="el-icon-plus"></i>
+            新增语料
+          </el-button>
+          <el-button type="success" class="action-button" @click="openBatchAddDialog">
+            <i class="el-icon-upload"></i>
+            批量新增
+          </el-button>
+        </div>
         <div class="forms-container">
           <el-table :data="pagedCorpusData" style="width: 100%" border>
             <el-table-column label="编号" prop="corpusId"></el-table-column>
@@ -185,13 +193,13 @@
     :before-close="handleBatchAddClose">
   <!-- 添加模板下载按钮 -->
   <div class="template-download">
-    <el-button type="primary" @click="downloadTemplate">
+    <el-button type="primary" @click="downloadTemplateFile">
       <i class="el-icon-download"></i>
       下载Excel模板
     </el-button>
     <span class="template-tip">请按照模板格式填写数据后上传</span>
   </div>
-  
+
   <div class="upload-area">
     <el-upload
         ref="uploadRef"
@@ -357,7 +365,7 @@ export default defineComponent({
     // 删除语料
     const deleteCorpus = (row) => {
       ElMessageBox.confirm(
-          '确定要删除该语料吗?',
+          '确定要删除该语吗?',
           '删除提示',
           {
             confirmButtonText: '确定',
@@ -475,7 +483,7 @@ export default defineComponent({
       // 设置表单数据
       editForm.value = {...originalFormData.value};
 
-      // 根据当前种类��取分类列表
+      // 根据当前种类取分类列表
       await fetchTypeOptions(row.kindName);
     };
 
@@ -485,7 +493,7 @@ export default defineComponent({
     };
     // 提交编辑
     const submitEdit = async () => {
-      // 检查数据是否发生变化
+      // 检��数据是否发生变化
       const isDataUnchanged =
           editForm.value.chineseText === originalFormData.value.chineseText &&
           editForm.value.englishText === originalFormData.value.englishText &&
@@ -544,6 +552,7 @@ export default defineComponent({
       }
     };
 
+
     //批量新增
     const batchAddDialogVisible = ref(false);
     const uploadRef = ref(null);
@@ -565,27 +574,22 @@ export default defineComponent({
     uploadRef.value.clearFiles();
   }
 };
-
     const handleFileChange = (file) => {
       uploadFile.value = file.raw;
     };
-
     const submitBatchAdd = async () => {
       if (!uploadFile.value) {
         ElMessage.warning('请选择要上传的文件');
         return;
       }
-
       const formData = new FormData();
       formData.append('file', uploadFile.value);
-
       try {
         const response = await axios.post(apiEndpoints.insertmorecorpus, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         });
-
         if (response.data.code === 200) {
           ElMessage.success('批量导入成功');
           batchAddDialogVisible.value = false;
@@ -604,6 +608,7 @@ export default defineComponent({
       }
     };
 
+    //模板下载
     const downloadTemplateFile = async () => {
   try {
     const response = await axios.get(apiEndpoints.downloadTemplate, {
@@ -622,7 +627,6 @@ export default defineComponent({
     ElMessage.error('下载模板失败，请稍后重试');
   }
 };
-
     // 初始化数据
     onMounted(() => {
       fetchCorpusData();
@@ -798,5 +802,30 @@ h3 {
 .template-tip {
   color: #666;
   font-size: 14px;
+}
+
+.button-group {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.action-button {
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-button i {
+  margin-right: 5px;
 }
 </style>

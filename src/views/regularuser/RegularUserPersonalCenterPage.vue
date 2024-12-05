@@ -169,7 +169,7 @@ export default defineComponent({
         return;
       }
       axios.post(apiEndpoints.updatepassword, {
-        userName: userName.value,
+        userName: userName,
         userNewPassword: newPassword.value
       }).then((response) => {
         if (response.data.code === 200) {

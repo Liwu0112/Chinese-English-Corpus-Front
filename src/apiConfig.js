@@ -36,9 +36,11 @@ const apiEndpoints = {
     deleteCorpus: `${baseUrlA}/deletecorpus`, //管理员删除语料
     insertonecorpus: `${baseUrlA}/insertonecorpus`, //新增单个语料
     insertmorecorpus: `${baseUrlA}/insertmorecorpus`, //批量新增按钮
-    downloadTemplate: `${baseUrlA}/downloadTemplate`, //下载模板文件5
-
-
+    downloadTemplate: `${baseUrlA}/downloadTemplate`, //下载模板文件
+    selectalltypes:`${baseUrlA}/selectalltypes`, //查看所有分类
+    updatetype:`${baseUrlA}/updatetype`, //修改分类信息
+    deletetype:`${baseUrlA}/deletetype`,  //删除分类
+    inserttype:`${baseUrlA}/inserttype`, //新增分类
 }
 
 export default apiEndpoints;
