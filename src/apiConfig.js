@@ -1,4 +1,4 @@
-const baseUrlA ='http://localhost:8090/admin';
+const baseUrlA = 'http://localhost:8090/admin';
 const baseUrlB = 'http://localhost:8090/common';
 const baseUrlC = 'http://localhost:8090/regularuser';
 
@@ -12,14 +12,13 @@ const apiEndpoints = {
     translationtext: `${baseUrlC}/translationbytext`,   //普通用户语料查询接口
     updateusername: `${baseUrlB}/updateusername`,  //修改用户名接口
     updatepassword: `${baseUrlB}/updatepassword`,  //修改密码接口
-    selectkindsname : `${baseUrlC}/selectallkindname`,  //普通用户查看所有种类名
+    selectkindsname: `${baseUrlC}/selectallkindname`,  //普通用户查看所有种类名
     selecttnbykn: `${baseUrlC}/selecttnbykn`,       //普通用户查看每个种类下的所有分类
     selecttypecorpus: `${baseUrlC}/selecttypecorpus`, //普通用户查看所属分类下的所有语料
     reselectcountcorpus: `${baseUrlC}/reselectcountcorpus`, //查看库中所有状态为上线(corpus_status=1)的语料总数
     reselectcountkind: `${baseUrlC}/reselectcountkind`,  //查看所有种类数（t_kind)
     reselectcounttype: `${baseUrlC}/reselectcounttype`,  //查看所有分类数（t_type)
     rescorpusbykindname: `${baseUrlC}/rescorpusbykindname`,//普通用户查询种类下对应的所有状态为1的语料总数
-
 
 
     //管理员
@@ -33,8 +32,11 @@ const apiEndpoints = {
     selectallcors: `${baseUrlA}/selectallcors`,   //所有语料
     selectallkind: `${baseUrlA}/selectallkind`,  //管理员查看所有种类
     selectalltype: `${baseUrlA}/selectalltype`, //管理员根据种类名查分类
-    updatecorpus: `${baseUrlA}/updatecorpus` ,//管理员修改语料
+    updatecorpus: `${baseUrlA}/updatecorpus`,//管理员修改语料
     deleteCorpus: `${baseUrlA}/deletecorpus`, //管理员删除语料
+    insertonecorpus: `${baseUrlA}/insertonecorpus`, //新增单个语料
+    insertmorecorpus: `${baseUrlA}/insertmorecorpus`, //批量新增按钮
+    downloadTemplate: `${baseUrlA}/downloadTemplate`, //下载模板文件5
 
 
 }

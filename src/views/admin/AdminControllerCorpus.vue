@@ -31,7 +31,9 @@
 
     <!-- 内容区域 -->
     <main class="content-area">
-      <div class="toolbar">
+      <div class="toolbar" style="justify-content: space-between;">
+        <el-button type="primary" @click="openAddDialog">新增语料</el-button>
+        <el-button type="primary" @click="openBatchAddDialog">批量新增</el-button>
         <div class="user-info">
           <span>欢迎您，{{ userName }}</span>
           <el-button type="text" class="custom-button" size="mini" @click="logout">点击退出</el-button>
@@ -66,7 +68,7 @@
             </el-table-column>
           </el-table>
 
-          <!-- 编辑对话框 -->
+          <!-- 修改对话框 -->
           <el-dialog
               v-model="editDialogVisible"
               title="修改语料"
@@ -119,6 +121,100 @@
     </span>
             </template>
           </el-dialog>
+
+          <!-- 新增 对话框 -->
+          <el-dialog
+              v-model="addDialogVisible"
+              title="新增语料"
+              width="50%"
+              :before-close="() => { addDialogVisible = false; }">
+            <el-form :model="addForm" ref="addFormRef" label-width="100px">
+              <el-form-item label="中文文本" prop="chineseText">
+                <el-input v-model="addForm.chineseText" type="textarea" :rows="3"></el-input>
+              </el-form-item>
+              <el-form-item label="英文文本" prop="englishText">
+                <el-input v-model="addForm.englishText" type="textarea" :rows="3"></el-input>
+              </el-form-item>
+              <el-form-item label="种类" prop="kindName">
+                <el-select
+                    v-model="addForm.kindName"
+                    placeholder="请选择种类"
+                    @change="handleKindChange">
+                  <el-option
+                      v-for="item in kindOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="分类" prop="typeName">
+                <el-select
+                    v-model="addForm.typeName"
+                    placeholder="请选择分类"
+                    :disabled="!addForm.kindName">
+                  <el-option
+                      v-for="item in typeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="状态" prop="corpusStatus">
+                <el-select v-model="addForm.corpusStatus" placeholder="请选择状态">
+                  <el-option label="上线" value="1"></el-option>
+                  <el-option label="下线" value="0"></el-option>
+                </el-select>
+              </el-form-item>
+            </el-form>
+            <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="addDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitAdd">确认</el-button>
+      </span>
+            </template>
+          </el-dialog>
+
+
+<!--          批量新增-->
+          <el-dialog
+          v-model="batchAddDialogVisible"
+    title="批量新增语料"
+    width="50%"
+    :before-close="handleBatchAddClose">
+  <!-- 添加模板下载按钮 -->
+  <div class="template-download">
+    <el-button type="primary" @click="downloadTemplate">
+      <i class="el-icon-download"></i>
+      下载Excel模板
+    </el-button>
+    <span class="template-tip">请按照模板格式填写数据后上传</span>
+  </div>
+  
+  <div class="upload-area">
+    <el-upload
+        ref="uploadRef"
+        class="upload-drop"
+        drag
+        action="#"
+        :auto-upload="false"
+        :on-change="handleFileChange"
+        :limit="1">
+      <i class="el-icon-upload"></i>
+      <div class="el-upload__text">
+        将文件拖到此处，或<em>点击选择文件</em>
+      </div>
+              </el-upload>
+            </div>
+            <template #footer>
+    <span class="dialog-footer">
+      <el-button @click="batchAddDialogVisible = false">取消</el-button>
+      <el-button type="primary" @click="submitBatchAdd">确认</el-button>
+    </span>
+            </template>
+          </el-dialog>
+
 
           <!-- 分页控制部分 -->
           <div style="text-align: center; margin-top: 20px;">
@@ -260,45 +356,45 @@ export default defineComponent({
 
     // 删除语料
     const deleteCorpus = (row) => {
-   ElMessageBox.confirm(
-    '确定要删除该语料吗?',
-    '删除提示',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  )
-    .then(async () => {
-      try {
-        // 添加日志来调试
-        console.log('正在删除语料，ID:', row.corpusId);
-        console.log('删除API地址:', apiEndpoints.deleteCorpus);
-        
-        // 确保使用完整的URL和正确的请求参数
-        const response = await axios.get(apiEndpoints.deleteCorpus, {
-          params: {
-            corpusId: row.corpusId
+      ElMessageBox.confirm(
+          '确定要删除该语料吗?',
+          '删除提示',
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
           }
-        });
-        
-        console.log('删除响应:', response); // 调试日志
-        
-        if (response.data.code === 200) {
-          ElMessage.success('删除成功');
-          await fetchCorpusData(); // 删除后重新加载数据
-        } else {
-          ElMessage.error(response.data.msg || '删除失败');
-        }
-      } catch (error) {
-        console.error('删除请求失败:', error);
-        ElMessage.error('删除失败，请稍后重试');
-      }
-    })
-    .catch(() => {
-      ElMessage.info('已取消删除');
-    });
-};
+      )
+          .then(async () => {
+            try {
+              // 添加日志来调试
+              console.log('正在删除语料，ID:', row.corpusId);
+              console.log('删除API地址:', apiEndpoints.deleteCorpus);
+
+              // 确保使用完整的URL和正确的请求参数
+              const response = await axios.get(apiEndpoints.deleteCorpus, {
+                params: {
+                  corpusId: row.corpusId
+                }
+              });
+
+              console.log('删除响应:', response); // 调试日志
+
+              if (response.data.code === 200) {
+                ElMessage.success('删除成功');
+                await fetchCorpusData(); // 删除后重新加载数据
+              } else {
+                ElMessage.error(response.data.msg || '删除失败');
+              }
+            } catch (error) {
+              console.error('删除请求失败:', error);
+              ElMessage.error('删除失败，请稍后重试');
+            }
+          })
+          .catch(() => {
+            ElMessage.info('已取消删除');
+          });
+    };
 
     const editDialogVisible = ref(false);
     const editForm = ref({
@@ -309,11 +405,11 @@ export default defineComponent({
       typeName: '',
       corpusStatus: ''
     });
-// 定义选项数据
+  // 定义选项数据
     const kindOptions = ref([]);
     const typeOptions = ref([]);
 
-// 获取所有种类
+  // 获取所有种类
     const fetchKindOptions = async () => {
       try {
         const response = await axios.get(apiEndpoints.selectallkind);
@@ -331,7 +427,7 @@ export default defineComponent({
       }
     };
 
-// 根据选择的种类获取分类
+    // 根据选择的种类获取分类
     const fetchTypeOptions = async (kindName) => {
       if (!kindName) {
         typeOptions.value = [];
@@ -354,7 +450,7 @@ export default defineComponent({
       }
     };
 
-// 监听种类选择变化
+  // 监听种类选择变化
     const handleKindChange = (value) => {
       editForm.value.typeName = ''; // 清空已选择的分类
       fetchTypeOptions(value); // 获取新的分类列表
@@ -362,59 +458,168 @@ export default defineComponent({
     const originalFormData = ref({});
 
     const editCorpus = async (row) => {
-  editDialogVisible.value = true;
-  // 先获取所有种类
-  await fetchKindOptions();
-  
-  // 保存原始数据
-  originalFormData.value = {
-    corpusId: row.corpusId,
-    chineseText: row.chineseText,
-    englishText: row.englishText,
-    kindName: row.kindName,
-    typeName: row.typeName,
-    corpusStatus: row.corpusStatus
-  };
-  
-  // 设置表单数据
-  editForm.value = { ...originalFormData.value };
-  
-  // 根据当前种类获取分类列表
-  await fetchTypeOptions(row.kindName);
-};
+      editDialogVisible.value = true;
+      // 先获取所有种类
+      await fetchKindOptions();
 
-// 处理对话框关闭
-    const handleClose = () => {
-      editDialogVisible.value = false;
+      // 保存原始数据
+      originalFormData.value = {
+        corpusId: row.corpusId,
+        chineseText: row.chineseText,
+        englishText: row.englishText,
+        kindName: row.kindName,
+        typeName: row.typeName,
+        corpusStatus: row.corpusStatus
+      };
 
+      // 设置表单数据
+      editForm.value = {...originalFormData.value};
+
+      // 根据当前种类��取分类列表
+      await fetchTypeOptions(row.kindName);
     };
 
-// 提交编辑
-const submitEdit = async () => {
-  // 检查数据是否发生变化
-  const isDataUnchanged = 
-    editForm.value.chineseText === originalFormData.value.chineseText &&
-    editForm.value.englishText === originalFormData.value.englishText &&
-    editForm.value.kindName === originalFormData.value.kindName &&
-    editForm.value.typeName === originalFormData.value.typeName &&
-    editForm.value.corpusStatus === originalFormData.value.corpusStatus;
-
-  if (isDataUnchanged) {
-    ElMessage.warning('数据未发生修改');
-    return;
-  }
-
-  try {
-    const response = await axios.post(apiEndpoints.updatecorpus, editForm.value);
-    if (response.data.code === 200) {
-      ElMessage.success('修改成功');
+    // 处理对话框关闭
+    const handleClose = () => {
       editDialogVisible.value = false;
-      fetchCorpusData(); // 刷新数据
-    } else {
-      ElMessage.error('修改失败');
-    }
+    };
+    // 提交编辑
+    const submitEdit = async () => {
+      // 检查数据是否发生变化
+      const isDataUnchanged =
+          editForm.value.chineseText === originalFormData.value.chineseText &&
+          editForm.value.englishText === originalFormData.value.englishText &&
+          editForm.value.kindName === originalFormData.value.kindName &&
+          editForm.value.typeName === originalFormData.value.typeName &&
+          editForm.value.corpusStatus === originalFormData.value.corpusStatus;
+
+      if (isDataUnchanged) {
+        ElMessage.warning('数据未发生修改');
+        return;
+      }
+
+      try {
+        const response = await axios.post(apiEndpoints.updatecorpus, editForm.value);
+        if (response.data.code === 200) {
+          ElMessage.success('修改成功');
+          editDialogVisible.value = false;
+          fetchCorpusData(); // 刷新数据
+        } else {
+          ElMessage.error('修改失败');
+        }
+      } catch (error) {
+        ElMessage.error('修改失败，请稍后重试');
+      }
+    };
+
+
+    //单个新增
+    const addDialogVisible = ref(false);
+    const addForm = ref({
+      chineseText: '',
+      englishText: '',
+      kindName: '',
+      typeName: '',
+      corpusStatus: '',
+      creator: userName
+    });
+
+    const openAddDialog = () => {
+      addDialogVisible.value = true;
+      fetchKindOptions(); // 获取种类选项
+    };
+
+    const submitAdd = async () => {
+      try {
+        const response = await axios.post(apiEndpoints.insertonecorpus, addForm.value);
+        if (response.data.code === 200) {
+          ElMessage.success('新增成功');
+          addDialogVisible.value = false;
+          fetchCorpusData(); // 刷新数据
+        } else {
+          ElMessage.error('新增失败当前语料在数据库中已经存在，语料id为：'+response.data.data);
+        }
+      } catch (error) {
+        ElMessage.error('新增失败，请稍后重试');
+      }
+    };
+
+    //批量新增
+    const batchAddDialogVisible = ref(false);
+    const uploadRef = ref(null);
+    const uploadFile = ref(null);
+
+    const openBatchAddDialog = () => {
+      batchAddDialogVisible.value = true;
+      // 重置上传文件
+      uploadFile.value = null;
+      if (uploadRef.value) {
+        uploadRef.value.clearFiles();
+      }
+    };
+    const handleBatchAddClose = () => {
+  batchAddDialogVisible.value = false;
+  // 重置上传文件
+  uploadFile.value = null;
+  if (uploadRef.value) {
+    uploadRef.value.clearFiles();
+  }
+};
+
+    const handleFileChange = (file) => {
+      uploadFile.value = file.raw;
+    };
+
+    const submitBatchAdd = async () => {
+      if (!uploadFile.value) {
+        ElMessage.warning('请选择要上传的文件');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', uploadFile.value);
+
+      try {
+        const response = await axios.post(apiEndpoints.insertmorecorpus, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        if (response.data.code === 200) {
+          ElMessage.success('批量导入成功');
+          batchAddDialogVisible.value = false;
+          // 重置上传文件
+          uploadFile.value = null;
+          if (uploadRef.value) {
+            uploadRef.value.clearFiles();
+          }
+          fetchCorpusData(); // 刷新数据
+        } else {
+          ElMessage.error(response.data.msg || '批量导入失败');
+        }
+      } catch (error) {
+        console.error('上传失败:', error);
+        ElMessage.error('批量导入失败，请稍后重试');
+      }
+    };
+
+    const downloadTemplateFile = async () => {
+  try {
+    const response = await axios.get(apiEndpoints.downloadTemplate, {
+      responseType: 'blob' // 确保接收的是二进制数据
+    });
+
+    // 创建一个URL对象
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', '语料导入模板.xlsx'); // 设置下载文件名
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   } catch (error) {
-    ElMessage.error('修改失败，请稍后重试');
+    ElMessage.error('下载模板失败，请稍后重试');
   }
 };
 
@@ -446,7 +651,18 @@ const submitEdit = async () => {
       kindOptions,
       typeOptions,
       handleKindChange,
-      originalFormData
+      originalFormData,
+      addDialogVisible,
+      addForm,
+      openAddDialog,
+      submitAdd,
+      batchAddDialogVisible,
+      openBatchAddDialog,
+      handleFileChange,
+      submitBatchAdd,
+      downloadTemplateFile,
+      uploadRef,
+      handleBatchAddClose,
     };
   },
 });
@@ -559,5 +775,28 @@ h3 {
 
 .el-table th:last-child, .el-table td:last-child {
   border-right: none;
+}
+
+.upload-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.upload-drop {
+  width: 100%;
+}
+
+.template-download {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.template-tip {
+  color: #666;
+  font-size: 14px;
 }
 </style>
