@@ -41,6 +41,10 @@ const apiEndpoints = {
     updatetype:`${baseUrlA}/updatetype`, //修改分类信息
     deletetype:`${baseUrlA}/deletetype`,  //删除分类
     inserttype:`${baseUrlA}/inserttype`, //新增分类
+    selectallreuserinfo:`${baseUrlA}/selectallreuserinfo`,
+    updateuserrole:`${baseUrlA}/updateuserrole`, //将普通用户设置为管理员
+    resetpassword:`${baseUrlA}/resetpassword`,  //重置密码
+    deleteuser:`${baseUrlA}/deleteuser`,    //删除用户
 }
 
 export default apiEndpoints;

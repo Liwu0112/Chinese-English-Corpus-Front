@@ -36,18 +36,67 @@
         </div>
       </div>
       <div class="page-content">
-        <div class="greeting-container">
-          <p style="font-size: 1.5rem; font-weight: bold;">{{greeting}}, {{userName}}! 欢迎来到用户管理页面！</p>
-        </div>
-        <div class="forms-container">
-        </div>
+        <el-table :data="userList" style="width: 100%" border stripe>
+          <el-table-column prop="userId" label="账户编号" width="180" />
+          <el-table-column prop="userName" label="账户" width="180" />
+          <el-table-column prop="registerTime" label="注册时间" width="180">
+            <template #default="scope">
+              {{ formatDate(scope.row.registerTime) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="userType" label="用户类型">
+            <template #default="scope">
+              {{ scope.row.role === 'admin' ? '管理员' : '普通用户' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="300">
+            <template #default="scope">
+              <el-button
+                type="primary"
+                size="small"
+                @click="handleChangeRole(scope.row)"
+              >
+                {{ scope.row.role === 'admin' ? '取消管理��' : '设为管理员' }}
+              </el-button>
+              <el-button
+                type="warning"
+                size="small"
+                @click="handleResetPassword(scope.row)"
+              >
+                重置密码
+              </el-button>
+              <el-button
+                type="danger"
+                size="small"
+                @click="handleDeleteUser(scope.row)"
+              >
+                删除用户
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
       </div>
     </main>
   </div>
+
+  <!-- 添加确认对话框 -->
+  <el-dialog
+    v-model="dialogVisible"
+    :title="dialogTitle"
+    width="30%"
+  >
+    <span>{{ dialogMessage }}</span>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmDialog">确定</el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <script>
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import { ElMessage } from "element-plus";
@@ -58,6 +107,12 @@ export default defineComponent({
     const router = useRouter();
     const userName = sessionStorage.getItem("userName");
     const activeMenu = ref("AdminConUsers");
+    const userList = ref([]);
+    const dialogVisible = ref(false);
+    const dialogTitle = ref('');
+    const dialogMessage = ref('');
+    const currentOperation = ref(null);
+    const currentUser = ref(null);
 
     const getGreeting = () => {
       const currentHour = new Date().getHours();
@@ -98,12 +153,112 @@ export default defineComponent({
       });
     };
 
+    const formatDate = (dateString) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    };
+
+    const fetchUserList = async () => {
+      try {
+        const response = await axios.get(apiEndpoints.selectallreuserinfo);
+        if (response.data.code === 200) {
+          userList.value = response.data.data;
+        } else {
+          ElMessage.error(response.data.msg || '获取用户列表失败');
+        }
+      } catch (error) {
+        ElMessage.error('获取用户列表失败，请稍后重试');
+        console.error('获取用户列表错误:', error);
+      }
+    };
+
+    const handleChangeRole = (user) => {
+      dialogTitle.value = user.role === 'admin' ? '取消管理员权限' : '设置管理员权限';
+      dialogMessage.value = `确定要${user.role === 'admin' ? '取消' : '设置'}用户 ${user.userName} 的管理员权限吗？`;
+      currentOperation.value = 'changeRole';
+      currentUser.value = user;
+      dialogVisible.value = true;
+    };
+
+    const handleResetPassword = (user) => {
+      dialogTitle.value = '重置密码';
+      dialogMessage.value = `确定要重置用户 ${user.userName} 的密码吗？`;
+      currentOperation.value = 'resetPassword';
+      currentUser.value = user;
+      dialogVisible.value = true;
+    };
+
+    const handleDeleteUser = (user) => {
+      dialogTitle.value = '删除用户';
+      dialogMessage.value = `确定要删除用户 ${user.userName} 吗？此操作不可恢复！`;
+      currentOperation.value = 'deleteUser';
+      currentUser.value = user;
+      dialogVisible.value = true;
+    };
+
+    const confirmDialog = async () => {
+      try {
+        let response;
+        switch (currentOperation.value) {
+          case 'changeRole':
+            response = await axios.post(apiEndpoints.updateuserrole, {
+              userId: currentUser.value.userId,
+              role: currentUser.value.role === 'admin' ? 'regular_user' : 'admin'
+            });
+            break;
+          case 'resetPassword':
+            response = await axios.post(apiEndpoints.resetpassword, {
+              userId: currentUser.value.userId
+            });
+            break;
+          case 'deleteUser':
+            response = await axios.post(apiEndpoints.deleteuser, {
+              userId: currentUser.value.userId
+            });
+            break;
+        }
+
+        if (response.data.code === 200) {
+          ElMessage.success(response.data.msg || '操作成功');
+          fetchUserList(); // 刷新用户列表
+        } else {
+          ElMessage.error(response.data.msg || '操作失败');
+        }
+      } catch (error) {
+        ElMessage.error('操作失败，请稍后重试');
+        console.error('操作错误:', error);
+      } finally {
+        dialogVisible.value = false;
+      }
+    };
+
+    onMounted(() => {
+      fetchUserList();
+    });
+
     return {
       userName,
       logout,
       handleMenuSelect,
       activeMenu,
       greeting,
+      userList,
+      formatDate,
+      dialogVisible,
+      dialogTitle,
+      dialogMessage,
+      handleChangeRole,
+      handleResetPassword,
+      handleDeleteUser,
+      confirmDialog,
     };
   }
 });
@@ -172,9 +327,10 @@ export default defineComponent({
 }
 
 .page-content {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
 }
 
 .forms-container {
@@ -218,5 +374,15 @@ h3 {
 .custom-button:active {
   background-color: #409eff!important;
   color: white!important;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.el-button {
+  margin-left: 8px;
 }
 </style>
