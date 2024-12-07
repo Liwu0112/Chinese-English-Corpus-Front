@@ -14,14 +14,14 @@
           <i class="el-icon-document"></i>
           <span>语料管理</span>
         </el-menu-item>
-        <el-menu-item index="AdminControllerCorpus">
+        <el-menu-item index="AdminControllerKinds">
           <i class="el-icon-document"></i>
           <span>分类管理</span>
         </el-menu-item>
-        <el-menu-item index="AdminControllerCorpus">
+        <el-menu-item index="AdminConUsers">
           <i class="el-icon-document"></i>
           <span>用户管理</span>
-        </el-menu-item> <el-menu-item index="AdminControllerCorpus">
+        </el-menu-item> <el-menu-item index="AdminPersonalCenter">
         <i class="el-icon-document"></i>
         <span>个人中心</span>
       </el-menu-item>

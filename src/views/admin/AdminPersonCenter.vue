@@ -32,14 +32,47 @@
       <div class="toolbar">
         <div class="user-info">
           <span>欢迎您，{{userName}}</span>
-          <el-button type="text" class="custom-button" size="mini" @click="logout">点击退出</el-button>
+          <el-button type="text" class="custom-button" size="mini" @click="logout"> 点击退出 </el-button>
         </div>
       </div>
       <div class="page-content">
         <div class="greeting-container">
-          <p style="font-size: 1.5rem; font-weight: bold;">{{greeting}}, {{userName}}! 欢迎来到个人中心！</p>
+          <p style="font-size: 1.5rem; font-weight: bold;">{{greeting}} ,  {{userName}} ! 欢迎来到用户中心 ！</p>
         </div>
         <div class="forms-container">
+          <!-- 修改账户名表单 -->
+          <el-card class="form-left" shadow="always">
+            <h3>修改账户名</h3>
+            <el-form label-width="100px" @submit.prevent="handleChangeUsername">
+              <el-form-item label="新账户名">
+                <el-input v-model="userNewName" placeholder="请输入新账户名"></el-input>
+              </el-form-item>
+              <div class="form-buttons">
+                <el-button type="primary" class="custom-button" @click="handleChangeUsername">确认</el-button>
+                <el-button type="warning" class="custom-button" @click="resetChangeUsernameForm">重置</el-button>
+              </div>
+            </el-form>
+          </el-card>
+
+          <!-- 修改密码表单 -->
+          <el-card class="form-right" shadow="always">
+            <h3>修改密码</h3>
+            <el-form label-width="100px" @submit.prevent="handleChangePassword">
+              <el-form-item label="旧密码">
+                <el-input type="password" v-model="oldPassword" placeholder="请输入旧密码"></el-input>
+              </el-form-item>
+              <el-form-item label="新密码">
+                <el-input type="password" v-model="newPassword" placeholder="请输入新密码"></el-input>
+              </el-form-item>
+              <el-form-item label="确认新密码">
+                <el-input type="password" v-model="confirmNewPassword" placeholder="请确认新密码"></el-input>
+              </el-form-item>
+              <div class="form-buttons">
+                <el-button type="primary" class="custom-button" @click="handleChangePassword">确认</el-button>
+                <el-button type="warning" class="custom-button" @click="resetChangePasswordForm">重置</el-button>
+              </div>
+            </el-form>
+          </el-card>
         </div>
       </div>
     </main>
@@ -47,10 +80,10 @@
 </template>
 
 <script>
-import { defineComponent, ref } from "vue";
-import { useRouter } from "vue-router";
+import {defineComponent, ref} from "vue";
+import {useRouter} from "vue-router";
 import axios from "axios";
-import { ElMessage } from "element-plus";
+import {ElMessage} from "element-plus";
 import apiEndpoints from "@/apiConfig";
 
 export default defineComponent({
@@ -71,11 +104,15 @@ export default defineComponent({
     };
 
     const greeting = ref(getGreeting());
+    const userNewName = ref("");
+    const oldPassword = ref("");
+    const newPassword = ref("");
+    const confirmNewPassword = ref("");
 
     const handleMenuSelect = (index) => {
       activeMenu.value = index;
       router.push({
-        name: index,
+        name: index
       });
     };
 
@@ -97,13 +134,84 @@ export default defineComponent({
         router.push("/");
       });
     };
+    const handleChangeUsername = () => {
+      if (!userNewName.value) {
+        ElMessage.warning("请输入新账户名！");
+        return;
+      }
+      axios.post(apiEndpoints.updateusername, {
+        userName: userName,
+        userNewName: userNewName.value
+      }).then((response) => {
+        if (response.data.code === 200) {
+          sessionStorage.setItem("userName", userNewName.value);
+          ElMessage.success("账户修改成功");
+          router.go(0);
+          userNewName.value = "";
+        } else {
+          userNewName.value = "";
+          ElMessage.error("修改失败，账户已被使用,请更改输入的账户名并重新提交");
+        }
+      }).catch(() => {
+        ElMessage.error("请求失败，请稍后重试");
+      });
+    };
+
+
+    const resetChangeUsernameForm = () => {
+      userNewName.value = "";
+    };
+
+    const handleChangePassword = () => {
+      if (!oldPassword.value || !newPassword.value || !confirmNewPassword.value) {
+        ElMessage.warning("请完整填写密码信息！");
+        return;
+      }
+      if (newPassword.value !== confirmNewPassword.value) {
+        ElMessage.error("两次输入的新密码不一致！");
+        return;
+      }
+      axios.post(apiEndpoints.updatepassword, {
+        userName: userName,
+        userNewPassword: newPassword.value
+      }).then((response) => {
+        if (response.data.code === 200) {
+          ElMessage.success("密码修改成功，请重新登录");
+          oldPassword.value = "";
+          newPassword.value = "";
+          confirmNewPassword.value = "";
+          router.push("/");
+        } else {
+          oldPassword.value = "";
+          newPassword.value = "";
+          confirmNewPassword.value = "";
+          ElMessage.error("修改失败，新密码和旧密码相同");
+        }
+      }).catch(() => {
+        ElMessage.error("请求失败，请稍后重试");
+      });
+    };
+
+    const resetChangePasswordForm = () => {
+      oldPassword.value = "";
+      newPassword.value = "";
+      confirmNewPassword.value = "";
+    };
 
     return {
       userName,
+      userNewName,
+      oldPassword,
+      newPassword,
+      confirmNewPassword,
       logout,
       handleMenuSelect,
+      handleChangeUsername,
+      handleChangePassword,
       activeMenu,
       greeting,
+      resetChangeUsernameForm,
+      resetChangePasswordForm
     };
   }
 });
@@ -112,7 +220,7 @@ export default defineComponent({
 <style scoped>
 .layout-container {
   display: flex;
-  height: 100vh;
+  height:  100vh;
 }
 
 .menu-bar {
@@ -185,7 +293,7 @@ export default defineComponent({
 
 .form-left,
 .form-right {
-  width: 48%; /* Slightly adjusted width for better spacing */
+  width: 48%;  /* Slightly adjusted width for better spacing */
 }
 
 .greeting-container {
@@ -200,7 +308,7 @@ h3 {
 .form-buttons {
   display: flex;
   justify-content: center; /* Horizontally center the buttons */
-  gap: 20px; /* Add space between the buttons */
+  gap: 20px;  /* Add space between the buttons */
 }
 
 .custom-button {
@@ -211,12 +319,12 @@ h3 {
 }
 
 .custom-button:hover {
-  background-color: #409eff!important;
-  color: white!important;
+  background-color: #409eff !important;
+  color: white !important;
 }
 
 .custom-button:active {
-  background-color: #409eff!important;
-  color: white!important;
+  background-color: #409eff !important;
+  color: white !important;
 }
 </style>
