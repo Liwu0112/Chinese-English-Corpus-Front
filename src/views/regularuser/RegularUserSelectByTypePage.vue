@@ -66,15 +66,49 @@
             <el-table-column prop="typeName" label="分类名称" align="center"></el-table-column>
           </el-table>
 
-          <!-- ���加分页器 -->
-          <div class="pagination-container" v-if="corpusData.length > 0">
-            <el-pagination
-              v-model:current-page="currentPage"
-              :page-size="13"
-              :total="corpusData.length"
-              layout="total, prev, pager, next"
-              @current-change="handleCurrentChange"
-            />
+          <!-- 修改分页器部分 -->
+          <div class="pagination-fixed" v-if="corpusData.length > 0">
+            <div style="text-align: center; margin-top: 20px;">
+              <span>共 {{ totalPages }} 页</span>
+
+              <!-- 上一页按钮 -->
+              <el-button
+                type="primary"
+                @click="goToPreviousPage"
+                :disabled="currentPage === 1"
+                style="margin-left: 10px;"
+              >
+                上一页
+              </el-button>
+
+              <!-- 页码输入框 -->
+              <el-input
+                v-model="inputPage"
+                type="number"
+                placeholder="输入页码"
+                style="width: 100px; display: inline-block; margin-left: 10px; margin-right: 10px;"
+                :min="1"
+                :max="totalPages"
+              />
+
+              <!-- 下一页按钮 -->
+              <el-button
+                type="primary"
+                @click="goToNextPage"
+                :disabled="currentPage === totalPages"
+              >
+                下一页
+              </el-button>
+
+              <!-- 确认按钮 -->
+              <el-button
+                type="primary"
+                @click="goToPage"
+                :disabled="inputPage < 1 || inputPage > totalPages"
+              >
+                确认
+              </el-button>
+            </div>
           </div>
 
           <div v-else class="no-data-message">
@@ -106,20 +140,45 @@ export default defineComponent({
     // 存储所有二级菜单数据的映射
     const secondLevelDataMap = ref(new Map());
 
-    // 添加分页相关的响应式变量
+    // 修改页相关的变量
     const currentPage = ref(1);
+    const pageSize = ref(13); // 保持每页13条数据不变
+    const inputPage = ref(1);
 
-    // 处页码改变
-    const handleCurrentChange = (val) => {
-      currentPage.value = val;
+    // 计算总页数
+    const totalPages = computed(() => {
+      return Math.ceil(corpusData.value.length / pageSize.value);
+    });
+
+    // 计算当前页的数据
+    const paginatedData = computed(() => {
+      const start = (currentPage.value - 1) * pageSize.value;
+      const end = start + pageSize.value;
+      return corpusData.value.slice(start, end);
+    });
+
+    // 分页控制方法
+    const goToPreviousPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value -= 1;
+        inputPage.value = currentPage.value;
+      }
     };
 
-    // 计算当前页显示的数据
-    const paginatedData = computed(() => {
-      const startIndex = (currentPage.value - 1) * 13;
-      const endIndex = startIndex + 13;
-      return corpusData.value.slice(startIndex, endIndex);
-    });
+    const goToNextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value += 1;
+        inputPage.value = currentPage.value;
+      }
+    };
+
+    const goToPage = () => {
+      if (inputPage.value >= 1 && inputPage.value <= totalPages.value) {
+        currentPage.value = Number(inputPage.value);
+      } else {
+        ElMessage.error('请输入有效的页码');
+      }
+    };
 
     // 获取分类数据
     const fetchCategories = async () => {
@@ -236,8 +295,13 @@ export default defineComponent({
       getSecondLevelData,
       handleSecondLevelClick,
       currentPage,
-      handleCurrentChange,
+      pageSize,
+      inputPage,
+      totalPages,
       paginatedData,
+      goToPreviousPage,
+      goToNextPage,
+      goToPage,
     };
   },
 });
@@ -297,10 +361,7 @@ export default defineComponent({
 .page-content {
   flex: 1;
   overflow-y: auto;
-  background-color: #ffffff;
   padding: 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  border-radius: 5px;
 }
 
 .toolbar {
@@ -378,18 +439,32 @@ h3 {
   text-align: center;
 }
 
-/* 添加跳转相关样式 */
+/* 添加���转相关样式 */
 .jump-container,
 .jump-input {
   display: none;
 }
 
 /* 保留分页器容器样式 */
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.pagination-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 260px;
+  right: 0;
+  background-color: transparent;
+  padding: 15px 0;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: none;
+}
+
+.pagination-fixed .el-button {
+  margin: 0 5px;
+  padding: 8px 15px;
+}
+
+.pagination-fixed .el-input {
+  margin: 0 5px;
 }
 </style>
 

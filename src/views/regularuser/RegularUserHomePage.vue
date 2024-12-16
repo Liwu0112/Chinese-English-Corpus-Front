@@ -34,24 +34,21 @@
       </div>
       <div class="page-content">
         <div class="greeting-container">
-          <p style="font-size: 1.5rem; font-weight: bold;">{{greeting}}, {{userName}}! 欢迎使用中英文语料库！</p>
+          <p class="greeting-text">{{greeting}}, {{userName}}! 欢迎使用中英文语料库！</p>
         </div>
         <div class="forms-container">
-          <el-card class="form-left" shadow="always">
-            <h3>当前语料库中各数据总数</h3>
-            <el-table :data="tableData" border style="margin-top: 20px;">
-              <el-table-column prop="name" label="名称"  align="center"></el-table-column>
-              <el-table-column prop="value" label="数量"  align="center"></el-table-column>
-            </el-table>
-          </el-card>
-
-          <el-card class="form-right" shadow="always">
-            <h3>各种类对应语料总数</h3>
-            <el-table :data="kindCorpusTableData" border style="margin-top: 20px;">
-            <el-table-column prop="kindName" label="种类名称"  align="center"></el-table-column>
-            <el-table-column prop="corpusCount" label="语料总数"  align="center"></el-table-column>
-            </el-table>
-          </el-card>
+          <div class="form-content">
+            <div>
+              <h2 class="intro-title">中英文语料库简介</h2>
+              <p>中英文语料库是一个精心构建的语言素材宝库，其中收纳了海量的中文与英文文本数据。其来源广泛，涉及经典文学著作、前沿学术期刊、权威新闻媒体、流行文化作品以及各类专业领域的文档资料等。</p>
+              <p>这些丰富多样的文本被系统地整理和分类，以方便使用者根据不同的需求进行精准检索和高效利用。对于语言学习者而言，语料库提供了真实、自然且具有情境化的语言学习环境，帮助他们熟悉不同场景下的词汇运用、语法结构以及语言风格，从而提升听说读写的综合能力。语言研究者能够借助语料库进行深入的对比分析，探究中英两种语言在词法、句法、语义等层面的异同，揭示语言背后的文化内涵和认知规律，为语言学理论的发展提供有力支撑。</p>
+              <p>在翻译领域，译员们可以参考语料库中的平行文本，获取精准恰当的翻译对等词和表达方式，确保译文质量，增强译文的可读性和流畅性，满足不同领域的翻译需求。同时，中英文语料库也为自然语言处理技术的研发提供了关键的基础数据，助力机器翻译系统、智能语音助手、文本挖掘工具等不断优化升级，推动语言技术向更高水平迈进，进一步促进跨语言的交流与合作，拓展人类知识的边界。</p>
+            </div>
+            <div class="charts-container">
+              <div id="statsChart" style="width: 40%; height: 350px;"></div>
+              <div id="kindChart" style="width: 40%; height: 350px;"></div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
@@ -64,6 +61,7 @@ import { useRouter } from "vue-router";
 import axios from "axios";
 import { ElMessage } from "element-plus";
 import apiEndpoints from "@/apiConfig";
+import * as echarts from 'echarts';
 
 export default defineComponent({
   setup() {
@@ -128,7 +126,7 @@ export default defineComponent({
                       .then((typeResponse) => {
                         const typeCount = typeResponse.data.data;
 
-                        // 创建表格数据
+                        // 建表格数据
                         tableData.value = [
                           {
                             name: '语料数',
@@ -161,7 +159,7 @@ export default defineComponent({
     };
     const kindCorpusTableData = ref([]);
     const getKindCorpusData = () => {
-      // 先调用selectkindsname接口获取种类名称数据
+      // 先调用selectkindsname接口获取类名称数据
       axios.get(apiEndpoints.selectkindsname)
           .then((selectKindsResponse) => {
             const kindsData = selectKindsResponse.data.data;
@@ -196,11 +194,110 @@ export default defineComponent({
           });
     }
 
+    const initCharts = () => {
+      // 初始化总数统计图表
+      const statsChart = echarts.init(document.getElementById('statsChart'));
+      const statsOption = {
+        title: {
+          text: '当前语料库中各数据总数',
+          left: 'center',
+          top: 20,
+          textStyle: {
+            fontSize: 16,
+            fontWeight: 'bold'
+          }
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'shadow'
+          }
+        },
+        grid: {
+          top: '20%',
+          bottom: '12%'
+        },
+        xAxis: {
+          type: 'category',
+          data: tableData.value.map(item => item.name),
+          axisLabel: {
+            interval: 0,
+            fontSize: 14
+          }
+        },
+        yAxis: {
+          type: 'value'
+        },
+        series: [{
+          data: tableData.value.map(item => item.value),
+          type: 'bar',
+          barWidth: '30%',
+          itemStyle: {
+            color: '#409EFF'
+          }
+        }]
+      };
+      statsChart.setOption(statsOption);
+
+      // 初始化种类分布图表
+      const kindChart = echarts.init(document.getElementById('kindChart'));
+      const kindOption = {
+        title: {
+          text: '各种类对应语料总数',
+          left: 'center',
+          top: 20,
+          textStyle: {
+            fontSize: 16,
+            fontWeight: 'bold'
+          }
+        },
+        legend: {
+          orient: 'vertical',
+          right: '5%',
+          top: 'middle',
+          textStyle: {
+            fontSize: 14
+          },
+          formatter: function(name) {
+            const item = kindCorpusTableData.value.find(item => item.kindName === name);
+            return `${name}: ${item ? item.corpusCount : 0}`;
+          }
+        },
+        tooltip: {
+          trigger: 'item',
+          formatter: '{b}: {c} ({d}%)'
+        },
+        series: [{
+          type: 'pie',
+          radius: ['35%', '70%'],
+          center: ['40%', '55%'],
+          data: kindCorpusTableData.value.map(item => ({
+            name: item.kindName,
+            value: item.corpusCount
+          })),
+          label: {
+            show: false
+          },
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
+          }
+        }]
+      };
+      kindChart.setOption(kindOption);
+    };
 
     // 在页面挂载完成后调用接口获取数据函数
     onMounted(() => {
       getCorpusData();
       getKindCorpusData();
+      // 添加一个小延时确保数据加载完成
+      setTimeout(() => {
+        initCharts();
+      }, 500);
     });
 
 
@@ -282,27 +379,34 @@ export default defineComponent({
 .page-content {
   display: flex;
   flex-direction: column;
-  gap: 20px;
 }
 
 .forms-container {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   gap: 20px;
+  align-items: flex-start;
 }
 
-.form-left,
-.form-right {
-  width: 48%; /* Slightly adjusted width for better spacing */
+.form-content {
+  width: 90%;
+  height: auto;
+  min-height: 450px;
+  border-radius: 4px;
 }
 
 .greeting-container {
   text-align: center;
+  margin-bottom: 0;
+  padding: 20px 0;
 }
 
-h3 {
+.intro-title {
   margin-bottom: 15px;
   text-align: center;
+  margin-top: 0;
+  font-size: 24px;
+  color: #333;
 }
 
 .form-buttons {
@@ -326,5 +430,49 @@ h3 {
 .custom-button:active {
   background-color: #409eff!important;
   color: white!important;
+}
+
+.intro-text {
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+.intro-text p {
+  margin: 10px 0;
+  line-height: 1.6;
+  text-align: justify;
+  color: #333;
+  font-size: 16px;
+  padding: 0 15px;
+}
+
+.charts-container {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding: 20px 15px;
+  align-items: center;
+}
+
+@media screen and (max-width: 1200px) {
+  .charts-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+  }
+  
+  #statsChart,
+  #kindChart {
+    width: 70% !important;
+  }
+}
+
+.greeting-text {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+  padding: 10px 0;
 }
 </style>

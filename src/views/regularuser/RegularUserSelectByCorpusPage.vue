@@ -38,42 +38,71 @@
       </div>
 
       <div class="page-content">
-        <!-- 搜索框 -->
-        <div class="search-container">
+        <!-- 搜索框区域 -->
+        <div class="button-group">
           <el-input
-              v-model="searchText"
-              placeholder="请输入需要搜索的语料段"
-              clearable
-              @keyup.enter="searchCorpus"
-          style="width: 60%;"
-          ></el-input>
-          <el-button
-              type="primary"
-              @click="searchCorpus"
-              class="custom-button"
+            v-model="searchText"
+            placeholder="请输入需要搜索的语料段"
+            class="search-input"
+            clearable
+            @input="searchCorpus"
+            @clear="searchCorpus"
           >
-            搜索
-          </el-button>
+            <template #prefix>
+              <i class="el-icon-search"></i>
+            </template>
+          </el-input>
         </div>
 
-        <!-- 搜索结果 -->
-        <div v-if="searchResult !== null">
-          <!-- 有数据时展示表格 -->
-          <div v-if="searchResult.length > 0" class="result-table">
-            <span class="result-text">
-              以下是包含字段 "{{ displaySearchText }}"的所有语料：
-            </span>
-            <el-table :data="searchResult" border style="margin-top: 20px;">
-              <el-table-column prop="chineseText" label="中文内容" align="center"></el-table-column>
-              <el-table-column prop="englishText" label="英文内容" align="center"></el-table-column>
-              <el-table-column prop="kindName" label="种类名称" align="center"></el-table-column>
-              <el-table-column prop="typeName" label="分类名称" align="center"></el-table-column>
-            </el-table>
-          </div>
+        <!-- 表格区域 -->
+        <div class="result-container">
+          <el-table 
+            :data="currentPageData" 
+            border
+            style="margin-top: 20px;"
+            :height="'calc(13 * 47px + 47px)'"
+          >
+            <el-table-column prop="chineseText" label="中文内容" align="center"></el-table-column>
+            <el-table-column prop="englishText" label="英文内容" align="center"></el-table-column>
+            <el-table-column prop="kindName" label="种类名称" align="center"></el-table-column>
+            <el-table-column prop="typeName" label="分类名称" align="center"></el-table-column>
+          </el-table>
+        </div>
 
-          <!-- 没有数据时展示提示 -->
-          <div v-else class="no-result-text">
-            没有查询到 "{{ displaySearchText }}"相关语料
+        <!-- 分页组件 -->
+        <div class="pagination-fixed">
+          <div style="text-align: center; margin-top: 20px;">
+            <span>共 {{ totalPages }} 页</span>
+            <el-button
+              type="primary"
+              @click="goToPreviousPage"
+              :disabled="currentPage === 1"
+              style="margin-left: 10px;"
+            >
+              上一页
+            </el-button>
+            <el-input
+              v-model="inputPage"
+              type="number"
+              placeholder="输入页码"
+              style="width: 100px; display: inline-block; margin-left: 10px; margin-right: 10px;"
+              :min="1"
+              :max="totalPages"
+            />
+            <el-button
+              type="primary"
+              @click="goToNextPage"
+              :disabled="currentPage === totalPages"
+            >
+              下一页
+            </el-button>
+            <el-button
+              type="primary"
+              @click="goToPage"
+              :disabled="inputPage < 1 || inputPage > totalPages"
+            >
+              确认
+            </el-button>
           </div>
         </div>
       </div>
@@ -82,7 +111,7 @@
 </template>
 
 <script>
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import { ElMessage } from "element-plus";
@@ -102,7 +131,7 @@ export default defineComponent({
       activeMenu.value = index;
       // 跳转并传递查询参数
       router.push({
-        name: index, // 根据选中的菜单项进行跳转
+        name: index, // 选中的菜单项进行跳转
         query: { username: userName.value}, // 传递 userName
       });
     };
@@ -129,28 +158,121 @@ export default defineComponent({
           });
     };
 
-    // 搜索功能
+    // 添加分页相关的响应式变量
+    const allCorpusData = ref([]); // 存储所有语料数据
+    const currentPage = ref(1);
+    const pageSize = ref(13);
+    const totalItems = ref(0);
+    const currentPageData = ref([]);
+
+    // 修改搜索功能
     const searchCorpus = () => {
-      const inputText = searchText.value.trim(); // 获取去除前后空格的搜索文本
+      const inputText = searchText.value.trim();
       if (!inputText) {
-        ElMessage.warning("请输入需要搜索的语料段");
+        // 当搜索框为空时，显示所有数据
+        currentPageData.value = allCorpusData.value.slice(0, 14);
+        totalItems.value = allCorpusData.value.length;
+        currentPage.value = 1;
         return;
       }
 
-      displaySearchText.value = inputText; // 更新显示的搜索文本
-      // 调用接口进行搜索
+      displaySearchText.value = inputText;
       axios.post(`${apiEndpoints.translationtext}?text=${inputText}`)
-          .then((response) => {
-            if (response.data.code === 200) {
-              searchResult.value = response.data.data;
-            } else {
-              searchResult.value = [];
-            }
-          })
-          .catch(() => {
-            ElMessage.error("请求失败，请稍后重试");
-          });
+        .then((response) => {
+          if (response.data.code === 200) {
+            searchResult.value = response.data.data;
+            totalItems.value = response.data.data.length;
+            currentPage.value = 1;
+            updateCurrentPageData();
+          } else {
+            searchResult.value = [];
+            totalItems.value = 0;
+            currentPageData.value = [];
+          }
+        })
+        .catch(() => {
+          ElMessage.error("请求失败，请稍后重试");
+        });
     };
+
+    // 修改更新当前页数据的方法
+    const updateCurrentPageData = () => {
+      const start = (currentPage.value - 1) * 14;
+      const end = start + 14;
+      const dataSource = searchText.value.trim() ? searchResult.value : allCorpusData.value;
+      if (dataSource) {
+        currentPageData.value = dataSource.slice(start, end);
+        totalItems.value = dataSource.length;
+      }
+    };
+
+    // 获取所有语料数据
+    const fetchAllCorpus = () => {
+      axios.get(apiEndpoints.reselectallcorpus)
+        .then((response) => {
+          if (response.data.code === 200) {
+            allCorpusData.value = response.data.data;
+            totalItems.value = response.data.data.length;
+            updateCurrentPageData();
+          } else {
+            ElMessage.error("获取数据失败");
+          }
+        })
+        .catch(() => {
+          ElMessage.error("请求失败，请稍后重试");
+        });
+    };
+
+    // 处理页码改变
+    const handlePageChange = (newPage) => {
+      currentPage.value = newPage;
+      updateCurrentPageData();
+    };
+
+    // 页面加载时立即获取数据
+    onMounted(() => {
+      fetchAllCorpus();
+    });
+
+    // 在 setup 中添加新的分页方法
+    const inputPage = ref(1);
+
+    // 计算总页数
+    const totalPages = computed(() => {
+      const dataSource = searchText.value.trim() ? searchResult.value : allCorpusData.value;
+      return Math.ceil((dataSource?.length || 0) / 14);
+    });
+
+    // 分页控制方法
+    const goToPreviousPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value -= 1;
+        inputPage.value = currentPage.value;
+        updateCurrentPageData();
+      }
+    };
+
+    const goToNextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value += 1;
+        inputPage.value = currentPage.value;
+        updateCurrentPageData();
+      }
+    };
+
+    const goToPage = () => {
+      if (inputPage.value >= 1 && inputPage.value <= totalPages.value) {
+        currentPage.value = Number(inputPage.value);
+        updateCurrentPageData();
+      } else {
+        ElMessage.error('请输入有效的页码');
+      }
+    };
+
+    // 添加表格高度计算
+    const tableHeight = computed(() => {
+      return 13 * 40 + 40 + 'px';
+    });
 
     return {
       userName,
@@ -160,7 +282,18 @@ export default defineComponent({
       searchCorpus,
       searchResult,
       handleMenuSelect,
-      activeMenu
+      activeMenu,
+      currentPage,
+      pageSize,
+      totalItems,
+      currentPageData,
+      handlePageChange,
+      inputPage,
+      totalPages,
+      goToPreviousPage,
+      goToNextPage,
+      goToPage,
+      tableHeight,
     };
   },
 });
@@ -219,16 +352,16 @@ export default defineComponent({
   flex-direction: column;
   padding: 20px;
   background-color: #f5f5f5;
-  overflow: hidden; /* 防止整体区域溢出滚动 */
+  overflow: hidden;
 }
 
 .page-content {
-  flex: 1; /* 使内容区域占据剩余空间 */
-  overflow-y: auto; /* 开启纵向滚动 */
-  background-color: #ffffff; /* 确保有白色背景 */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 添加视觉分隔感 */
-  border-radius: 5px; /* 可选：圆角样式 */
+  position: relative;
+  height: calc(100vh - 100px);
 }
 
 /* 工具栏 */
@@ -246,23 +379,24 @@ export default defineComponent({
 
 /* 添加间距 */
 .user-info span {
-  margin-right: 15px; /* 设置欢迎文本与按钮之间的间距 */
+  margin-right: 15px; /* 设置欢迎文字与按钮之间的间距 */
   color: black; /* 设置字体颜色为黑色 */
 }
 
 /* 搜索框相关样式 */
 .search-container {
+  padding: 20px 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 50px; /* 根据实际需求调整搜索框距顶部的距离 */
+  gap: 10px;
 }
 
 
 /* 搜索结果文本 */
 .result-text {
   font-size: 14px;
-  margin-top: 30px; /* 适当的上间距 */
+  margin-top: 30px; /* 适当上间距 */
   margin-bottom: 15px; /* 添加底部间距，确保与表格有适当的距离 */
   color: #999;
   font-weight: bold;
@@ -270,7 +404,7 @@ export default defineComponent({
 
 /* 搜索结果表格样式 */
 .result-table {
-  margin-top: 20px; /* 调整表格距离文本的距离 */
+  margin-top: 20px; /* 调整表格距文本的距离 */
   width: 100%;
 }
 
@@ -304,5 +438,87 @@ export default defineComponent({
   overflow: hidden; /* 禁止全局滚动 */
 }
 
+/* 修改分页相关样式 */
+.pagination-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 260px;
+  right: 0;
+  background-color: transparent;
+  padding: 15px 0;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: none;
+}
+
+/* 修改分页按钮样式 */
+.pagination-fixed .el-button {
+  margin: 0 5px;
+  padding: 8px 15px;
+}
+
+.pagination-fixed .el-input {
+  margin: 0 5px;
+}
+
+/* 确保内容不会被分页组件遮挡 */
+.content-area {
+  padding-bottom: 80px;
+}
+
+/* 表格样式优化 */
+.el-table {
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+/* 移除多余的表格边框样式 */
+:deep(.el-table__inner-wrapper::after),
+:deep(.el-table::before),
+:deep(.el-table__footer-wrapper::before) {
+  display: none;
+}
+
+:deep(.el-table__inner-wrapper) {
+  border-bottom: 1px solid #EBEEF5;
+}
+
+/* 调整表格行高 */
+:deep(.el-table__row) {
+  height: 47px;
+}
+
+:deep(.el-table__header-row) {
+  height: 47px;
+}
+
+/* 表格内容溢出处理 */
+.el-table .cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 分页器样式 */
+.pagination-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 260px;
+  right: 0;
+  background-color: transparent;
+  padding: 15px 0;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: none;
+}
+
+.pagination-fixed .el-button {
+  margin: 0 5px;
+  padding: 8px 15px;
+}
+
+.pagination-fixed .el-input {
+  margin: 0 5px;
+}
 </style>
 

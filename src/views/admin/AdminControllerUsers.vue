@@ -35,46 +35,89 @@
           <el-button type="text" class="custom-button" size="mini" @click="logout">点击退出</el-button>
         </div>
       </div>
-      <div class="page-content">
-        <el-table :data="userList" style="width: 100%" border stripe>
-          <el-table-column prop="userId" label="账户编号" width="180" />
-          <el-table-column prop="userName" label="账户" width="180" />
-          <el-table-column prop="registerTime" label="注册时间" width="180">
-            <template #default="scope">
-              {{ formatDate(scope.row.registerTime) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="userType" label="用户类型">
-            <template #default="scope">
-              {{ scope.row.role === 'admin' ? '管理员' : '普通用户' }}
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="300">
-            <template #default="scope">
-              <el-button
-                type="primary"
-                size="small"
-                @click="handleChangeRole(scope.row)"
-              >
-                {{ scope.row.role === 'admin' ? '取消管理��' : '设为管理员' }}
-              </el-button>
-              <el-button
-                type="warning"
-                size="small"
-                @click="handleResetPassword(scope.row)"
-              >
-                重置密码
-              </el-button>
-              <el-button
-                type="danger"
-                size="small"
-                @click="handleDeleteUser(scope.row)"
-              >
-                删除用户
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+      <el-table :data="paginatedUserList" style="width: 80%; margin: 0 auto;" border stripe>
+        <el-table-column prop="userId" label="账户编号" width="180" />
+        <el-table-column prop="userName" label="账户" width="180" />
+        <el-table-column prop="registrationDate" label="注册时间" width="180">
+          <template #default="scope">
+            {{ formatDate(scope.row.registrationDate) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="userType" label="用户类型">
+          <template #default="scope">
+            {{ scope.row.role === 'admin' ? '管理员' : '普通用户' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="300">
+          <template #default="scope">
+            <el-button
+              type="primary"
+              size="small"
+              @click="handleChangeRole(scope.row)"
+            >
+              {{ scope.row.role === 'admin' ? '取消管理员' : '设为管理员' }}
+            </el-button>
+            <el-button
+              type="warning"
+              size="small"
+              @click="handleResetPassword(scope.row)"
+            >
+              重置密码
+            </el-button>
+            <el-button
+              type="danger"
+              size="small"
+              @click="handleDeleteUser(scope.row)"
+            >
+              删除用户
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 修改分页组件 -->
+      <div class="pagination-fixed">
+        <div style="text-align: center; margin-top: 20px;">
+          <span>共 {{ totalPages }} 页</span>
+
+          <!-- 上一页按钮 -->
+          <el-button
+            type="primary"
+            @click="goToPreviousPage"
+            :disabled="currentPage === 1"
+            style="margin-left: 10px;"
+          >
+            上一页
+          </el-button>
+
+          <!-- 页码输入框 -->
+          <el-input
+            v-model="inputPage"
+            type="number"
+            placeholder="输入页码"
+            style="width: 100px; display: inline-block; margin-left: 10px; margin-right: 10px;"
+            :min="1"
+            :max="totalPages"
+          />
+
+          <!-- 下一页按钮 -->
+          <el-button
+            type="primary"
+            @click="goToNextPage"
+            :disabled="currentPage === totalPages"
+          >
+            下一页
+          </el-button>
+
+          <!-- 确认按钮 -->
+          <el-button
+            type="primary"
+            @click="goToPage"
+            :disabled="inputPage < 1 || inputPage > totalPages"
+          >
+            确认
+          </el-button>
+        </div>
       </div>
     </main>
   </div>
@@ -96,7 +139,7 @@
 </template>
 
 <script>
-import { defineComponent, ref, onMounted } from "vue";
+import { defineComponent, ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import { ElMessage } from "element-plus";
@@ -113,6 +156,9 @@ export default defineComponent({
     const dialogMessage = ref('');
     const currentOperation = ref(null);
     const currentUser = ref(null);
+    const currentPage = ref(1);
+    const pageSize = ref(20);
+    const inputPage = ref(1);
 
     const getGreeting = () => {
       const currentHour = new Date().getHours();
@@ -171,6 +217,7 @@ export default defineComponent({
         const response = await axios.get(apiEndpoints.selectallreuserinfo);
         if (response.data.code === 200) {
           userList.value = response.data.data;
+          totalPages.value = Math.ceil(userList.value.length / pageSize.value);
         } else {
           ElMessage.error(response.data.msg || '获取用户列表失败');
         }
@@ -228,7 +275,7 @@ export default defineComponent({
 
         if (response.data.code === 200) {
           ElMessage.success(response.data.msg || '操作成功');
-          fetchUserList(); // 刷新用户列表
+          fetchUserList(); // 新用户列表
         } else {
           ElMessage.error(response.data.msg || '操作失败');
         }
@@ -237,6 +284,47 @@ export default defineComponent({
         console.error('操作错误:', error);
       } finally {
         dialogVisible.value = false;
+      }
+    };
+
+    const handleSizeChange = (val) => {
+      pageSize.value = val;
+      currentPage.value = 1;
+    };
+
+    const handleCurrentChange = (val) => {
+      currentPage.value = val;
+    };
+
+    const paginatedUserList = computed(() => {
+      const start = (currentPage.value - 1) * pageSize.value;
+      const end = start + pageSize.value;
+      return userList.value.slice(start, end);
+    });
+
+    const totalPages = computed(() => {
+      return Math.ceil(userList.value.length / pageSize.value);
+    });
+
+    const goToPreviousPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value -= 1;
+        inputPage.value = currentPage.value;
+      }
+    };
+
+    const goToNextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value += 1;
+        inputPage.value = currentPage.value;
+      }
+    };
+
+    const goToPage = () => {
+      if (inputPage.value >= 1 && inputPage.value <= totalPages.value) {
+        currentPage.value = Number(inputPage.value);
+      } else {
+        ElMessage.error('请输入有效的页码');
       }
     };
 
@@ -259,6 +347,16 @@ export default defineComponent({
       handleResetPassword,
       handleDeleteUser,
       confirmDialog,
+      currentPage,
+      pageSize,
+      paginatedUserList,
+      handleSizeChange,
+      handleCurrentChange,
+      totalPages,
+      inputPage,
+      goToPreviousPage,
+      goToNextPage,
+      goToPage,
     };
   }
 });
@@ -307,6 +405,7 @@ export default defineComponent({
   flex: 1;
   padding: 20px;
   background-color: #f5f5f5;
+  padding-bottom: 80px;
 }
 
 .toolbar {
@@ -324,13 +423,6 @@ export default defineComponent({
 .user-info span {
   margin-right: 15px;
   color: black;
-}
-
-.page-content {
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px 0 rgba(0,0,0,0.1);
 }
 
 .forms-container {
@@ -384,5 +476,31 @@ h3 {
 
 .el-button {
   margin-left: 8px;
+}
+
+.pagination-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 260px;
+  right: 0;
+  background-color: transparent;
+  padding: 15px 0;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: none;
+}
+
+.pagination-fixed .el-button {
+  margin: 0 5px;
+  padding: 8px 15px;
+}
+
+.pagination-fixed .el-input {
+  margin: 0 5px;
+}
+
+.el-table {
+  width: 80% !important;
+  margin: 0 auto;
 }
 </style>

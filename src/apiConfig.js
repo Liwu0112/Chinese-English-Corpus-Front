@@ -19,6 +19,7 @@ const apiEndpoints = {
     reselectcountkind: `${baseUrlC}/reselectcountkind`,  //查看所有种类数（t_kind)
     reselectcounttype: `${baseUrlC}/reselectcounttype`,  //查看所有分类数（t_type)
     rescorpusbykindname: `${baseUrlC}/rescorpusbykindname`,//普通用户查询种类下对应的所有状态为1的语料总数
+    reselectallcorpus: `${baseUrlC}/selectallcorpus`, //普通用户搜索所有上线语料内容
 
 
     //管理员

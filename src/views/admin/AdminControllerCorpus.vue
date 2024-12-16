@@ -39,28 +39,42 @@
       </div>
       <div class="page-content">
         <div class="button-group">
-          <el-button type="primary" class="action-button" @click="openAddDialog">
-            <i class="el-icon-plus"></i>
-            新增语料
-          </el-button>
-          <el-button type="success" class="action-button" @click="openBatchAddDialog">
-            <i class="el-icon-upload"></i>
-            批量新增
-          </el-button>
+          <div class="left-buttons">
+            <el-button type="primary" class="action-button" @click="openAddDialog">
+              <i class="el-icon-plus"></i>
+              新增语料
+            </el-button>
+            <el-button type="success" class="action-button" @click="openBatchAddDialog">
+              <i class="el-icon-upload"></i>
+              批量新增
+            </el-button>
+          </div>
+          <el-input
+            v-model="searchKeyword"
+            placeholder="请输入编号/中文/英文内容"
+            class="search-input"
+            clearable
+            @clear="handleSearchClear"
+            @input="handleSearch">
+            <template #prefix>
+              <i class="el-icon-search"></i>
+            </template>
+          </el-input>
         </div>
+
         <div class="forms-container">
-          <el-table :data="pagedCorpusData" style="width: 100%" border>
-            <el-table-column label="编号" prop="corpusId"></el-table-column>
-            <el-table-column label="中文" prop="chineseText"></el-table-column>
-            <el-table-column label="英文" prop="englishText"></el-table-column>
-            <el-table-column label="种类" prop="kindName"></el-table-column>
-            <el-table-column label="分类" prop="typeName"></el-table-column>
-            <el-table-column label="状态" prop="corpusStatus">
+          <el-table :data="filteredCorpusData" style="width: 100%" border>
+            <el-table-column label="编号" prop="corpusId" width="80"></el-table-column>
+            <el-table-column label="中文" prop="chineseText" min-width="250"></el-table-column>
+            <el-table-column label="英文" prop="englishText" min-width="250"></el-table-column>
+            <el-table-column label="种类" prop="kindName" width="100"></el-table-column>
+            <el-table-column label="分类" prop="typeName" width="100"></el-table-column>
+            <el-table-column label="状态" prop="corpusStatus" width="80">
               <template #default="{ row }">
                 <span>{{ row.corpusStatus === '1' ? '上线' : '下线' }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="创建者" prop="creator"></el-table-column>
+            <el-table-column label="创建者" prop="creator" width="100"></el-table-column>
             <el-table-column label="创建时间" prop="creationTime">
               <template #default="{ row }">
                 <span>{{ new Date(row.creationTime).toLocaleString() }}</span>
@@ -68,10 +82,21 @@
             </el-table-column>
 
             <!-- 新增操作列 -->
-            <el-table-column label="操作">
+            <el-table-column label="操作" width="200">
               <template #default="{ row }">
-                <el-button @click="editCorpus(row)" type="text" size="small">修改</el-button>
-                <el-button @click="deleteCorpus(row)" type="text" size="small" style="color: red;">删除</el-button>
+                <el-button 
+                  type="primary" 
+                  size="small" 
+                  @click="editCorpus(row)"
+                  style="margin-right: 10px;">
+                  修改
+                </el-button>
+                <el-button 
+                  type="danger" 
+                  size="small" 
+                  @click="deleteCorpus(row)">
+                  删除
+                </el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -136,14 +161,35 @@
               title="新增语料"
               width="50%"
               :before-close="() => { addDialogVisible = false; }">
-            <el-form :model="addForm" ref="addFormRef" label-width="100px">
-              <el-form-item label="中文文本" prop="chineseText">
+            <el-form 
+                :model="addForm" 
+                ref="addFormRef" 
+                label-width="100px"
+                :rules="formRules">
+              <el-form-item 
+                  label="中文文本" 
+                  prop="chineseText"
+                  :rules="[
+                      { required: true, message: '请输入中文文本', trigger: 'blur' },
+                      { min: 1, message: '文本不能为空', trigger: 'blur' }
+                  ]">
                 <el-input v-model="addForm.chineseText" type="textarea" :rows="3"></el-input>
               </el-form-item>
-              <el-form-item label="英文文本" prop="englishText">
+              <el-form-item 
+                  label="英文文本" 
+                  prop="englishText"
+                  :rules="[
+                      { required: true, message: '请输入英文文本', trigger: 'blur' },
+                      { min: 1, message: '文本不能为空', trigger: 'blur' }
+                  ]">
                 <el-input v-model="addForm.englishText" type="textarea" :rows="3"></el-input>
               </el-form-item>
-              <el-form-item label="种类" prop="kindName">
+              <el-form-item 
+                  label="种类" 
+                  prop="kindName"
+                  :rules="[
+                      { required: true, message: '请选择种类', trigger: 'change' }
+                  ]">
                 <el-select
                     v-model="addForm.kindName"
                     placeholder="请选择种类"
@@ -156,7 +202,12 @@
                   </el-option>
                 </el-select>
               </el-form-item>
-              <el-form-item label="分类" prop="typeName">
+              <el-form-item 
+                  label="分类" 
+                  prop="typeName"
+                  :rules="[
+                      { required: true, message: '请选择分类', trigger: 'change' }
+                  ]">
                 <el-select
                     v-model="addForm.typeName"
                     placeholder="请选择分类"
@@ -169,7 +220,12 @@
                   </el-option>
                 </el-select>
               </el-form-item>
-              <el-form-item label="状态" prop="corpusStatus">
+              <el-form-item 
+                  label="状态" 
+                  prop="corpusStatus"
+                  :rules="[
+                      { required: true, message: '请选择状态', trigger: 'change' }
+                  ]">
                 <el-select v-model="addForm.corpusStatus" placeholder="请选择状态">
                   <el-option label="上线" value="1"></el-option>
                   <el-option label="下线" value="0"></el-option>
@@ -215,56 +271,69 @@
       </div>
               </el-upload>
             </div>
-            <template #footer>
+
+    <!-- 添加进度条组件 -->
+    <div v-if="uploadProgress.show" class="progress-container">
+        <el-progress 
+            :percentage="uploadProgress.percentage"
+            :status="uploadProgress.status"
+            :stroke-width="15">
+        </el-progress>
+        <div class="progress-text">{{ uploadProgress.text }}</div>
+    </div>
+
+    <template #footer>
     <span class="dialog-footer">
-      <el-button @click="batchAddDialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="submitBatchAdd">确认</el-button>
+      <el-button @click="batchAddDialogVisible = false" :disabled="uploadProgress.uploading">取消</el-button>
+      <el-button type="primary" @click="submitBatchAdd" :loading="uploadProgress.uploading">确认</el-button>
     </span>
             </template>
           </el-dialog>
 
 
           <!-- 分页控制部分 -->
-          <div style="text-align: center; margin-top: 20px;">
-            <span>共 {{ totalPages }} 页</span>
+          <div class="pagination-fixed">
+            <div style="text-align: center; margin-top: 20px;">
+              <span>共 {{ totalPages }} 页</span>
 
-            <!-- 上一页按钮 -->
-            <el-button
-                type="primary"
-                @click="goToPreviousPage"
-                :disabled="currentPage === 1"
-                style="margin-left: 10px;"
-            >
-              上一页
-            </el-button>
+              <!-- 上一页按钮 -->
+              <el-button
+                  type="primary"
+                  @click="goToPreviousPage"
+                  :disabled="currentPage === 1"
+                  style="margin-left: 10px;"
+              >
+                上一页
+              </el-button>
 
-            <!-- 页码输入框 -->
-            <el-input
-                v-model="inputPage"
-                type="number"
-                placeholder="输入页码"
-                style="width: 100px; display: inline-block; margin-left: 10px; margin-right: 10px;"
-                :min="1"
-                :max="totalPages"
-            />
+              <!-- 页码输入框 -->
+              <el-input
+                  v-model="inputPage"
+                  type="number"
+                  placeholder="输入页码"
+                  style="width: 100px; display: inline-block; margin-left: 10px; margin-right: 10px;"
+                  :min="1"
+                  :max="totalPages"
+              />
 
-            <!-- 下一页按钮 -->
-            <el-button
-                type="primary"
-                @click="goToNextPage"
-                :disabled="currentPage === totalPages"
-            >
-              下一页
-            </el-button>
+              <!-- 下一页按钮 -->
+              <el-button
+                  type="primary"
+                  @click="goToNextPage"
+                  :disabled="currentPage === totalPages"
+              >
+                下一页
+              </el-button>
 
-            <!-- 确认按钮 -->
-            <el-button
-                type="primary"
-                @click="goToPage"
-                :disabled="inputPage < 1 || inputPage > totalPages"
-            >
-              确认
-            </el-button>
+              <!-- 确认按钮 -->
+              <el-button
+                  type="primary"
+                  @click="goToPage"
+                  :disabled="inputPage < 1 || inputPage > totalPages"
+              >
+                确认
+              </el-button>
+            </div>
           </div>
         </div>
       </div>
@@ -288,7 +357,6 @@ export default defineComponent({
     const currentPage = ref(1);
     const pageSize = ref(10); // 每页显示10条
     const inputPage = ref(1); // 页码输入框的值
-    const totalPages = computed(() => Math.ceil(corpusData.value.length / pageSize.value));
 
     // 获取语料数据
     const fetchCorpusData = async () => {
@@ -303,13 +371,6 @@ export default defineComponent({
         ElMessage.error('请求失败，请稍后重试');
       }
     };
-
-    // 计算分页后的数据
-    const pagedCorpusData = computed(() => {
-      const start = (currentPage.value - 1) * pageSize.value;
-      const end = start + pageSize.value;
-      return corpusData.value.slice(start, end);
-    });
 
     // 菜单项选择
     const handleMenuSelect = (index) => {
@@ -337,7 +398,7 @@ export default defineComponent({
       });
     };
 
-    // 跳转到上一页
+    // 跳到上一页
     const goToPreviousPage = () => {
       if (currentPage.value > 1) {
         currentPage.value -= 1;
@@ -493,7 +554,7 @@ export default defineComponent({
     };
     // 提交编辑
     const submitEdit = async () => {
-      // 检��数据是否发生变化
+      // 检查数据是否发生变化
       const isDataUnchanged =
           editForm.value.chineseText === originalFormData.value.chineseText &&
           editForm.value.englishText === originalFormData.value.englishText &&
@@ -537,18 +598,30 @@ export default defineComponent({
       fetchKindOptions(); // 获取种类选项
     };
 
+    const addFormRef = ref(null);
+
     const submitAdd = async () => {
+      if (!addFormRef.value) return;
+      
       try {
+        await addFormRef.value.validate();
+        
         const response = await axios.post(apiEndpoints.insertonecorpus, addForm.value);
         if (response.data.code === 200) {
           ElMessage.success('新增成功');
           addDialogVisible.value = false;
           fetchCorpusData(); // 刷新数据
+          // 重置表单
+          addFormRef.value.resetFields();
         } else {
-          ElMessage.error('新增失败当前语料在数据库中已经存在，语料id为：'+response.data.data);
+          ElMessage.error('新增失败，当前语料在据库中已经存在，语料id为：' + response.data.data);
         }
       } catch (error) {
-        ElMessage.error('新增失败，请稍后重试');
+        if (error.message) {
+          ElMessage.error('请写完整所有必填项');
+        } else {
+          ElMessage.error('新增失败，请稍后重试');
+        }
       }
     };
 
@@ -567,45 +640,86 @@ export default defineComponent({
       }
     };
     const handleBatchAddClose = () => {
-  batchAddDialogVisible.value = false;
-  // 重置上传文件
-  uploadFile.value = null;
-  if (uploadRef.value) {
-    uploadRef.value.clearFiles();
-  }
-};
+        if (uploadProgress.value.uploading) {
+            ElMessage.warning('正在上传中，请稍候...');
+            return;
+        }
+        batchAddDialogVisible.value = false;
+        uploadFile.value = null;
+        if (uploadRef.value) {
+            uploadRef.value.clearFiles();
+        }
+        uploadProgress.value.show = false;
+    };
     const handleFileChange = (file) => {
       uploadFile.value = file.raw;
     };
+    const uploadProgress = ref({
+        show: false,
+        percentage: 0,
+        status: '',
+        text: '',
+        uploading: false
+    });
+
     const submitBatchAdd = async () => {
-      if (!uploadFile.value) {
-        ElMessage.warning('请选择要上传的文件');
-        return;
-      }
-      const formData = new FormData();
-      formData.append('file', uploadFile.value);
-      try {
-        const response = await axios.post(apiEndpoints.insertmorecorpus, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-        if (response.data.code === 200) {
-          ElMessage.success('批量导入成功');
-          batchAddDialogVisible.value = false;
-          // 重置上传文件
-          uploadFile.value = null;
-          if (uploadRef.value) {
-            uploadRef.value.clearFiles();
-          }
-          fetchCorpusData(); // 刷新数据
-        } else {
-          ElMessage.error(response.data.msg || '批量导入失败');
+        if (!uploadFile.value) {
+            ElMessage.warning('请选择要上传的文件');
+            return;
         }
-      } catch (error) {
-        console.error('上传失败:', error);
-        ElMessage.error('批量导入失败，请稍后重试');
-      }
+
+        uploadProgress.value = {
+            show: true,
+            percentage: 0,
+            status: '',
+            text: '正在上传文件...',
+            uploading: true
+        };
+
+        const formData = new FormData();
+        formData.append('file', uploadFile.value);
+
+        try {
+            const response = await axios.post(apiEndpoints.insertmorecorpus, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                },
+                onUploadProgress: (progressEvent) => {
+                    const percentage = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    uploadProgress.value.percentage = percentage;
+                    uploadProgress.value.text = `正在上传... ${percentage}%`;
+                }
+            });
+
+            if (response.data.code === 200) {
+                uploadProgress.value.percentage = 100;
+                uploadProgress.value.status = 'success';
+                uploadProgress.value.text = '上传成功！';
+                
+                setTimeout(() => {
+                    ElMessage.success('批量导入成功');
+                    batchAddDialogVisible.value = false;
+                    uploadFile.value = null;
+                    if (uploadRef.value) {
+                        uploadRef.value.clearFiles();
+                    }
+                    uploadProgress.value.show = false;
+                    uploadProgress.value.uploading = false;
+                    fetchCorpusData();
+                }, 1000);
+            } else {
+                uploadProgress.value.status = 'exception';
+                uploadProgress.value.text = '上传失败：' + (response.data.msg || '未知错误');
+                ElMessage.error(response.data.msg || '批量导入失败');
+            }
+        } catch (error) {
+            console.error('上传失败:', error);
+            uploadProgress.value.status = 'exception';
+            uploadProgress.value.text = '上传失败，请稍后重试';
+            ElMessage.error('批量导入失败，请稍后重试');
+        } finally {
+            uploadProgress.value.uploading = false;
+        }
     };
 
     //模板下载
@@ -632,6 +746,63 @@ export default defineComponent({
       fetchCorpusData();
     });
 
+    // 添加搜索相关的响应式变量
+    const searchKeyword = ref('');
+    
+    // 首先定义过滤后的数据
+    const filteredCorpusData = computed(() => {
+      if (!searchKeyword.value) {
+        return pagedCorpusData.value;  // 返回分页后的数据
+      }
+      
+      const keyword = searchKeyword.value.toLowerCase().trim();
+      const filtered = corpusData.value.filter(item => {
+        return (
+          item.corpusId.toString().includes(keyword) ||
+          item.chineseText.toLowerCase().includes(keyword) ||
+          item.englishText.toLowerCase().includes(keyword)
+        );
+      });
+
+      // 对过滤后的数据进行分页
+      const start = (currentPage.value - 1) * pageSize.value;
+      const end = start + pageSize.value;
+      return filtered.slice(start, end);
+    });
+    
+    // 然后定义分页数据
+    const pagedCorpusData = computed(() => {
+      const start = (currentPage.value - 1) * pageSize.value;
+      const end = start + pageSize.value;
+      return corpusData.value.slice(start, end);
+    });
+    
+    // 最后定义总页数
+    const totalPages = computed(() => {
+      const totalItems = searchKeyword.value
+        ? corpusData.value.filter(item => {
+            const keyword = searchKeyword.value.toLowerCase().trim();
+            return (
+              item.corpusId.toString().includes(keyword) ||
+              item.chineseText.toLowerCase().includes(keyword) ||
+              item.englishText.toLowerCase().includes(keyword)
+            );
+          }).length
+        : corpusData.value.length;
+      return Math.ceil(totalItems / pageSize.value);
+    });
+    
+    // 处理搜索输入
+    const handleSearch = () => {
+      currentPage.value = 1; // 重置页码到第一页
+    };
+    
+    // 处理清除搜索
+    const handleSearchClear = () => {
+      searchKeyword.value = '';
+      currentPage.value = 1;
+    };
+    
     return {
       userName,
       logout,
@@ -667,6 +838,12 @@ export default defineComponent({
       downloadTemplateFile,
       uploadRef,
       handleBatchAddClose,
+      uploadProgress,
+      addFormRef,
+      searchKeyword,
+      filteredCorpusData,
+      handleSearch,
+      handleSearchClear,
     };
   },
 });
@@ -715,6 +892,7 @@ export default defineComponent({
   flex: 1;
   padding: 20px;
   background-color: #f5f5f5;
+  padding-bottom: 80px; /* 增加底部内边距 */
 }
 
 .toolbar {
@@ -735,6 +913,8 @@ export default defineComponent({
 }
 
 .page-content {
+  /* 删除白色背景 */
+  /* background-color: white; */
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -806,8 +986,15 @@ h3 {
 
 .button-group {
   display: flex;
-  gap: 15px;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 20px;
+  padding: 0 20px;
+}
+
+.left-buttons {
+  display: flex;
+  gap: 15px;
 }
 
 .action-button {
@@ -827,5 +1014,45 @@ h3 {
 
 .action-button i {
   margin-right: 5px;
+}
+
+/* 添加新的样式 */
+.progress-container {
+    margin-top: 20px;
+    padding: 0 20px;
+}
+
+.progress-text {
+    text-align: center;
+    margin-top: 10px;
+    color: #606266;
+}
+
+.search-input {
+  width: 600px; /* 将搜索框从400px加长到600px */
+  margin: 0 auto; /* 保持水平居中 */
+}
+
+/* 添加新的固定分页样式 */
+.pagination-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 260px;
+  right: 0;
+  background-color: transparent;
+  padding: 15px 0;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: none;
+}
+
+/* 修改分页按钮样式，使其与主页面一致 */
+.pagination-fixed .el-button {
+  margin: 0 5px;
+  padding: 8px 15px;
+}
+
+.pagination-fixed .el-input {
+  margin: 0 5px;
 }
 </style>

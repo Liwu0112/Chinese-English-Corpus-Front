@@ -39,31 +39,21 @@
         <div class="greeting-container">
           <p style="font-size: 1.5rem; font-weight: bold;">{{greeting}}, {{userName}}! 欢迎使用中英文语料库！</p>
         </div>
-        <div class="forms-container">
-          <el-card class="form-left" shadow="always">
-            <h3>当前语料库中各数据总数</h3>
-            <el-table :data="tableData" border style="margin-top: 20px;">
-              <el-table-column prop="name" label="名称"  align="center"></el-table-column>
-              <el-table-column prop="value" label="数量"  align="center"></el-table-column>
-            </el-table>
+        <div class="data-container">
+          <div class="chart-section full-width">
+            <h3 class="chart-title">各种类对应语料总数</h3>
+            <v-chart class="chart" :option="kindCorpusOption" />
+          </div>
 
-            <h3>当前语料库中用户数量</h3>
-            <el-table :data="userData" border style="margin-top: 20px;">
-              <el-table-column prop="name" label="名称"  align="center"></el-table-column>
-              <el-table-column prop="value" label="数量"  align="center"></el-table-column>
-            </el-table>
-          </el-card>
+          <div class="chart-section">
+            <h3 class="chart-title">当前语料库中各语料数据总览</h3>
+            <v-chart class="chart" :option="totalDataOption" />
+          </div>
 
-          <el-card class="form-right" shadow="always">
-            <h3>各种类对应语料总数</h3>
-            <el-table :data="kindCorpusTableData" border style="margin-top: 20px;">
-              <el-table-column prop="kindName" label="种类名称" align="center"></el-table-column>
-              <el-table-column prop="corpusCount" label="语料数" align="center"></el-table-column>
-              <el-table-column prop="onlineCount" label="上线数" align="center"></el-table-column>
-              <el-table-column prop="offlineCount" label="下线数" align="center"></el-table-column>
-            </el-table>
-          </el-card>
-
+          <div class="chart-section">
+            <h3 class="chart-title">当前语料库中普通用户数量</h3>
+            <v-chart class="chart" :option="userDataOption" />
+          </div>
         </div>
       </div>
     </main>
@@ -71,13 +61,31 @@
 </template>
 
 <script>
-import { defineComponent, ref, onMounted } from "vue";
+import { defineComponent, ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import axios from "axios";
 import { ElMessage } from "element-plus";
 import apiEndpoints from "@/apiConfig";
+import VChart from 'vue-echarts';
+import * as echarts from 'echarts/core';
+import { CanvasRenderer } from 'echarts/renderers';
+import { PieChart, BarChart } from 'echarts/charts';
+import { GridComponent, TooltipComponent, LegendComponent, TitleComponent } from 'echarts/components';
+
+echarts.use([
+  CanvasRenderer,
+  PieChart,
+  BarChart,
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+  TitleComponent
+]);
 
 export default defineComponent({
+  components: {
+    VChart
+  },
   setup() {
     const router = useRouter();
     const userName = sessionStorage.getItem("userName");
@@ -240,12 +248,179 @@ export default defineComponent({
             ElMessage.error('获取种类名称数据失败，请稍后重试');
           });
     };
-    // 在页面挂载完成后调用接口获取数据函数
+    // 在页面挂载完成后调用接口获取据数
     onMounted(() => {
       getCorpusData();
       getKindCorpusData();
       getUserData()
     });
+
+    // 总数图表配置
+    const totalDataOption = computed(() => ({
+      tooltip: {
+        trigger: 'item'
+      },
+      legend: {
+        orient: 'vertical',
+        left: 'left'
+      },
+      series: [{
+        type: 'pie',
+        radius: '50%',
+        data: tableData.value.map(item => ({
+          name: item.name,
+          value: item.value
+        })),
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        }
+      }]
+    }));
+
+    // 用户数据图表配置
+    const userDataOption = computed(() => ({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow'
+        }
+      },
+      grid: {
+        left: '15%',
+        right: '15%',
+        bottom: '15%'
+      },
+      xAxis: {
+        type: 'category',
+        data: userData.value.map(item => item.name),
+        axisLabel: {
+          fontSize: 14,
+          color: '#333'
+        },
+        axisTick: {
+          show: false
+        },
+        axisLine: {
+          lineStyle: {
+            color: '#ccc'
+          }
+        }
+      },
+      yAxis: {
+        type: 'value',
+        name: '用户数量',
+        nameTextStyle: {
+          fontSize: 14,
+          color: '#666'
+        },
+        minInterval: 1,
+        axisLabel: {
+          fontSize: 12,
+          color: '#666',
+          formatter: function(value) {
+            return Math.floor(value);
+          }
+        },
+        splitLine: {
+          lineStyle: {
+            type: 'dashed',
+            color: '#eee'
+          }
+        }
+      },
+      series: [{
+        type: 'bar',
+        data: userData.value.map(item => item.value),
+        barWidth: '40%',
+        itemStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [{
+              offset: 0,
+              color: '#409EFF' // 渐变开始颜色
+            }, {
+              offset: 1,
+              color: '#95CCF9' // 渐变结束颜色
+            }]
+          },
+          borderRadius: [8, 8, 0, 0]
+        },
+        emphasis: {
+          itemStyle: {
+            color: {
+              type: 'linear',
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [{
+                offset: 0,
+                color: '#66b1ff' // 悬停时的渐变开始颜色
+              }, {
+                offset: 1,
+                color: '#b3d8ff' // 悬停时的渐变结束颜色
+              }]
+            }
+          }
+        },
+        label: {
+          show: true,
+          position: 'top',
+          fontSize: 14,
+          color: '#666',
+          formatter: '{c}'
+        }
+      }]
+    }));
+
+    // 种类数据图表配置
+    const kindCorpusOption = computed(() => ({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow'
+        }
+      },
+      legend: {
+        data: ['语料数', '上线数', '下线数']
+      },
+      xAxis: {
+        type: 'category',
+        data: kindCorpusTableData.value.map(item => item.kindName),
+        axisLabel: {
+          rotate: 45
+        }
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [
+        {
+          name: '语料数',
+          type: 'bar',
+          data: kindCorpusTableData.value.map(item => item.corpusCount)
+        },
+        {
+          name: '上线数',
+          type: 'bar',
+          data: kindCorpusTableData.value.map(item => item.onlineCount)
+        },
+        {
+          name: '下线数',
+          type: 'bar',
+          data: kindCorpusTableData.value.map(item => item.offlineCount)
+        }
+      ]
+    }));
+
     return {
       userName,
       logout,
@@ -255,7 +430,10 @@ export default defineComponent({
       tableData,
       kindCorpusTableData,
       getUserData,
-      userData
+      userData,
+      totalDataOption,
+      userDataOption,
+      kindCorpusOption
     };
   }
 });
@@ -329,23 +507,37 @@ export default defineComponent({
   gap: 20px;
 }
 
-.forms-container {
-  display: flex;
-  justify-content: space-between;
+.data-container {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
+  padding: 0 20px 20px;
 }
 
-.form-left,
-.form-right {
-  width: 48%; /* Slightly adjusted width for better spacing */
+.chart-section {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.chart {
+  height: 280px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.full-width .chart {
+  height: 300px;
 }
 
 .greeting-container {
-  text-align: center;
-}
-
-h3 {
-  margin-bottom: 15px;
   text-align: center;
 }
 
@@ -370,5 +562,33 @@ h3 {
 .custom-button:active {
   background-color: #409eff!important;
   color: white!important;
+}
+
+.chart-title {
+  text-align: center;
+  margin-bottom: 10px;
+  font-size: 16px;
+  color: #333;
+  width: 100%;
+}
+
+@media screen and (max-height: 800px) {
+  .chart {
+    height: 240px;
+  }
+  
+  .full-width .chart {
+    height: 260px;
+  }
+}
+
+@media screen and (max-width: 1200px) {
+  .data-container {
+    padding: 0 10px 10px;
+  }
+  
+  .chart-section {
+    padding: 5px;
+  }
 }
 </style>

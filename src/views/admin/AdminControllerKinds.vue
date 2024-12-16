@@ -38,7 +38,23 @@
       <div class="page-content">
         <div class="table-container">
           <div class="table-header">
-            <el-button type="primary" @click="handleAdd">新增分类</el-button>
+            <div class="search-container">
+              <el-input
+                v-model="searchQuery"
+                placeholder="请输入分类编号或分类名"
+                class="search-input"
+                clearable
+                @clear="handleSearchClear"
+              >
+                <template #prefix>
+                  <i class="el-icon-search"></i>
+                </template>
+              </el-input>
+            </div>
+            <el-button type="primary" class="action-button" @click="handleAdd">
+              <i class="el-icon-plus"></i>
+              新增分类
+            </el-button>
           </div>
           <el-table :data="paginatedData" style="width: 80%; margin: 0 auto;" border>
             <el-table-column prop="typeId" label="分类编号" width="180" />
@@ -47,14 +63,14 @@
             <el-table-column label="操作" width="200">
               <template #default="scope">
                 <el-button 
-                  type="primary" 
+                  type="primary"
                   size="small" 
                   @click="handleEdit(scope.row)"
                 >
                   修改
                 </el-button>
                 <el-button 
-                  type="danger" 
+                  type="danger"
                   size="small" 
                   @click="handleDelete(scope.row)"
                 >
@@ -65,15 +81,49 @@
           </el-table>
         </div>
         
-        <div class="pagination-container">
-          <el-pagination
-            background
-            layout="prev, pager, next"
-            :total="typeList.length"
-            :page-size="pageSize"
-            :current-page="currentPage"
-            @current-change="handleCurrentChange"
-          />
+        <!-- 修改分页按钮的容器 -->
+        <div class="pagination-fixed">
+          <div style="text-align: center; margin-top: 20px;">
+            <span>共 {{ totalPages }} 页</span>
+
+            <!-- 上一页按钮 -->
+            <el-button
+              type="primary"
+              @click="goToPreviousPage"
+              :disabled="currentPage === 1"
+              style="margin-left: 10px;"
+            >
+              上一页
+            </el-button>
+
+            <!-- 页码输入框 -->
+            <el-input
+              v-model="inputPage"
+              type="number"
+              placeholder="输入页码"
+              style="width: 100px; display: inline-block; margin-left: 10px; margin-right: 10px;"
+              :min="1"
+              :max="totalPages"
+            />
+
+            <!-- 下一页按钮 -->
+            <el-button
+              type="primary"
+              @click="goToNextPage"
+              :disabled="currentPage === totalPages"
+            >
+              下一页
+            </el-button>
+
+            <!-- 确认按钮 -->
+            <el-button
+              type="primary"
+              @click="goToPage"
+              :disabled="inputPage < 1 || inputPage > totalPages"
+            >
+              确认
+            </el-button>
+          </div>
         </div>
         
         <!-- 添加新增弹出框 -->
@@ -184,7 +234,7 @@ export default defineComponent({
         }
       }).catch((error) => {
         if (error.response && error.response.status === 401) {
-          ElMessage.error("身份验证失败，请重新登录");
+          ElMessage.error("份验证失败，请重新登录");
         } else {
           ElMessage.error("请求失败，请稍后重试");
         }
@@ -228,7 +278,7 @@ export default defineComponent({
           editDialogVisible.value = false;
           getAllTypes(); // 刷新表格数据
         } else {
-          ElMessage.error(response.data.msg || '修改失��');
+          ElMessage.error(response.data.msg || '修改失败');
         }
       } catch (error) {
         ElMessage.error('修改失败，请稍后重试');
@@ -269,7 +319,7 @@ export default defineComponent({
 
     const kindOptions = ref([]);
 
-    // 获取所有种类选项
+    // 获取所有选项
     const getAllKinds = async () => {
       try {
         const response = await axios.get(apiEndpoints.selectallkind);
@@ -323,20 +373,63 @@ export default defineComponent({
       }
     };
 
-    // 添加分页相关的响应式变量
+    // 修改分页相关的变量和计算属性
     const currentPage = ref(1);
     const pageSize = ref(15);
+    const inputPage = ref(1);
 
-    // 计算当前页显示的数据
-    const paginatedData = computed(() => {
-      const start = (currentPage.value - 1) * pageSize.value;
-      const end = start + pageSize.value;
-      return typeList.value.slice(start, end);
+    // 计算总页数
+    const totalPages = computed(() => {
+      return Math.ceil(typeList.value.length / pageSize.value);
     });
 
-    // 处理页码改变
-    const handleCurrentChange = (val) => {
-      currentPage.value = val;
+    // 计算当前页的数据
+    const paginatedData = computed(() => {
+      // 先进行搜索过滤
+      const filteredData = typeList.value.filter(item => {
+        if (!searchQuery.value) return true;
+        const query = searchQuery.value.toLowerCase();
+        return (
+          item.typeId.toString().includes(query) ||
+          item.kindName.toLowerCase().includes(query) ||
+          item.typeName.toLowerCase().includes(query)
+        );
+      });
+      
+      // 然后进行分页
+      const start = (currentPage.value - 1) * pageSize.value;
+      const end = start + pageSize.value;
+      return filteredData.slice(start, end);
+    });
+
+    // 分页控制方法
+    const goToPreviousPage = () => {
+      if (currentPage.value > 1) {
+        currentPage.value -= 1;
+        inputPage.value = currentPage.value;
+      }
+    };
+
+    const goToNextPage = () => {
+      if (currentPage.value < totalPages.value) {
+        currentPage.value += 1;
+        inputPage.value = currentPage.value;
+      }
+    };
+
+    const goToPage = () => {
+      if (inputPage.value >= 1 && inputPage.value <= totalPages.value) {
+        currentPage.value = Number(inputPage.value);
+      } else {
+        ElMessage.error('请输入有效的页码');
+      }
+    };
+
+    const searchQuery = ref('');
+
+    // 添加清除搜索的处理函数
+    const handleSearchClear = () => {
+      searchQuery.value = '';
     };
 
     return {
@@ -358,8 +451,14 @@ export default defineComponent({
       submitAdd,
       currentPage,
       pageSize,
+      inputPage,
+      totalPages,
       paginatedData,
-      handleCurrentChange,
+      goToPreviousPage,
+      goToNextPage,
+      goToPage,
+      searchQuery,
+      handleSearchClear,
     };
   }
 });
@@ -408,6 +507,7 @@ export default defineComponent({
   flex: 1;
   padding: 20px;
   background-color: #f5f5f5;
+  padding-bottom: 80px;
 }
 
 .toolbar {
@@ -477,16 +577,16 @@ h3 {
 }
 
 .table-container {
-  background-color: #fff;
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
   display: flex;
   justify-content: center;
+  background-color: transparent;
+  box-shadow: none;
 }
 
-/* 添加按钮间距 */
+/* 加按钮间距 */
 .el-button + .el-button {
   margin-left: 10px;
 }
@@ -520,7 +620,8 @@ h3 {
 .table-header {
   margin-bottom: 20px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   width: 80%;
   margin: 0 auto 20px auto;
 }
@@ -535,7 +636,111 @@ h3 {
   display: flex;
   justify-content: center;
   margin-top: 20px;
-  width: 80%;
-  margin: 20px auto;
+  padding: 10px 0;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 添加分页组件样式 */
+:deep(.el-pagination) {
+  padding: 0;
+  margin: 0;
+}
+
+:deep(.el-pagination .el-select .el-input) {
+  width: 100px;
+}
+
+/* 页按钮样式 */
+:deep(.el-pagination.is-background .el-pager li:not(.is-disabled).is-active) {
+  background-color: #409eff;
+  color: #fff;
+}
+
+:deep(.el-pagination.is-background .el-pager li) {
+  background-color: #fff;
+  color: #606266;
+  min-width: 32px;
+  border-radius: 2px;
+  border: 1px solid #dcdfe6;
+}
+
+:deep(.el-pagination.is-background .btn-prev),
+:deep(.el-pagination.is-background .btn-next) {
+  background-color: #fff;
+  border: 1px solid #dcdfe6;
+  border-radius: 2px;
+  padding: 0 4px;
+}
+
+:deep(.el-pagination .el-select .el-input .el-input__inner) {
+  border-radius: 2px;
+}
+
+:deep(.el-pagination__jump .el-input__inner) {
+  border-radius: 2px;
+  text-align: center;
+}
+
+:deep(.el-pagination.is-background .btn-prev:disabled),
+:deep(.el-pagination.is-background .btn-next:disabled) {
+  background-color: #f5f7fa;
+  color: #c0c4cc;
+}
+
+:deep(.el-pagination.is-background .el-pager li:not(.is-disabled):hover) {
+  color: #409eff;
+}
+
+.pagination-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 260px;
+  right: 0;
+  background-color: transparent;
+  padding: 15px 0;
+  text-align: center;
+  z-index: 1000;
+  box-shadow: none;
+}
+
+/* 添加新的按钮样式 */
+.action-button {
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-button i {
+  margin-right: 5px;
+}
+
+/* 修改分页按钮样式，使其与主页面一致 */
+.pagination-fixed .el-button {
+  margin: 0 5px;
+  padding: 8px 15px;
+}
+
+.pagination-fixed .el-input {
+  margin: 0 5px;
+}
+
+.search-container {
+  flex: 1;
+  margin-right: 20px;
+}
+
+.search-input {
+  width: 300px;
 }
 </style>
