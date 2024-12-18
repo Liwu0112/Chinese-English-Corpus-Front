@@ -161,7 +161,7 @@ export default defineComponent({
     // 添加分页相关的响应式变量
     const allCorpusData = ref([]); // 存储所有语料数据
     const currentPage = ref(1);
-    const pageSize = ref(13);
+    const pageSize = ref(12);
     const totalItems = ref(0);
     const currentPageData = ref([]);
 
@@ -170,7 +170,7 @@ export default defineComponent({
       const inputText = searchText.value.trim();
       if (!inputText) {
         // 当搜索框为空时，显示所有数据
-        currentPageData.value = allCorpusData.value.slice(0, 14);
+        currentPageData.value = allCorpusData.value.slice(0, 13);
         totalItems.value = allCorpusData.value.length;
         currentPage.value = 1;
         return;
@@ -197,8 +197,8 @@ export default defineComponent({
 
     // 修改更新当前页数据的方法
     const updateCurrentPageData = () => {
-      const start = (currentPage.value - 1) * 14;
-      const end = start + 14;
+      const start = (currentPage.value - 1) * 13;
+      const end = start + 13;
       const dataSource = searchText.value.trim() ? searchResult.value : allCorpusData.value;
       if (dataSource) {
         currentPageData.value = dataSource.slice(start, end);
@@ -240,7 +240,7 @@ export default defineComponent({
     // 计算总页数
     const totalPages = computed(() => {
       const dataSource = searchText.value.trim() ? searchResult.value : allCorpusData.value;
-      return Math.ceil((dataSource?.length || 0) / 14);
+      return Math.ceil((dataSource?.length || 0) / 13);
     });
 
     // 分页控制方法
@@ -377,7 +377,7 @@ export default defineComponent({
   align-items: center;
 }
 
-/* 添加间距 */
+/* 添加间�� */
 .user-info span {
   margin-right: 15px; /* 设置欢迎文字与按钮之间的间距 */
   color: black; /* 设置字体颜色为黑色 */

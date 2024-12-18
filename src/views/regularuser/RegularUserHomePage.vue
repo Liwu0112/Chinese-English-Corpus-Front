@@ -195,62 +195,89 @@ export default defineComponent({
     }
 
     const initCharts = () => {
-      // 初始化总数统计图表
+      // 第一个饼图配置
       const statsChart = echarts.init(document.getElementById('statsChart'));
       const statsOption = {
         title: {
-          text: '当前语料库中各数据总数',
-          left: 'center',
-          top: 20,
+          text: '类别数据图',
+          left: '40%',  // 调整为与饼图中心对齐
+          top: '5%',    // 调整到顶部位置
           textStyle: {
             fontSize: 16,
             fontWeight: 'bold'
           }
         },
         tooltip: {
-          trigger: 'axis',
-          axisPointer: {
-            type: 'shadow'
-          }
+          trigger: 'item',
+          formatter: '{b}: {c}个 ({d}%)'
         },
-        grid: {
-          top: '20%',
-          bottom: '12%'
-        },
-        xAxis: {
-          type: 'category',
-          data: tableData.value.map(item => item.name),
-          axisLabel: {
-            interval: 0,
+        legend: {
+          orient: 'vertical',
+          right: '5%',
+          top: 'middle',
+          textStyle: {
             fontSize: 14
           }
         },
-        yAxis: {
-          type: 'value'
-        },
         series: [{
-          data: tableData.value.map(item => item.value),
-          type: 'bar',
-          barWidth: '30%',
-          itemStyle: {
-            color: '#409EFF'
+          type: 'pie',
+          radius: ['35%', '70%'],
+          center: ['40%', '55%'],
+          data: [
+            {
+              name: '种类数',
+              value: tableData.value.find(item => item.name === '种类数')?.value || 0
+            },
+            {
+              name: '分类数',
+              value: tableData.value.find(item => item.name === '分类数')?.value || 0
+            }
+          ],
+          label: {
+            show: true,
+            formatter: '{b}: {c}个',
+            position: 'outside'
+          },
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
           }
         }]
       };
       statsChart.setOption(statsOption);
 
-      // 初始化种类分布图表
+      // 第二个饼图配置
       const kindChart = echarts.init(document.getElementById('kindChart'));
+      const totalCorpus = kindCorpusTableData.value.reduce((sum, item) => sum + item.corpusCount, 0);
+      
       const kindOption = {
-        title: {
-          text: '各种类对应语料总数',
-          left: 'center',
-          top: 20,
+        title: [{
+          text: '语料数据图',
+          left: '40%',  // 调整为与饼图中心对齐
+          top: '5%',    // 调整到顶部位置
           textStyle: {
             fontSize: 16,
             fontWeight: 'bold'
           }
-        },
+        }, {
+          text: '语料总数',
+          subtext: totalCorpus + '条',
+          left: '40%',
+          top: '50%',
+          textAlign: 'center',
+          textStyle: {
+            fontSize: 14,
+            color: '#666'
+          },
+          subtextStyle: {
+            fontSize: 20,
+            color: '#333',
+            fontWeight: 'bold'
+          }
+        }],
         legend: {
           orient: 'vertical',
           right: '5%',

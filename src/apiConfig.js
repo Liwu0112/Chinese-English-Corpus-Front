@@ -46,6 +46,8 @@ const apiEndpoints = {
     updateuserrole:`${baseUrlA}/updateuserrole`, //将普通用户设置为管理员
     resetpassword:`${baseUrlA}/resetpassword`,  //重置密码
     deleteuser:`${baseUrlA}/deleteuser`,    //删除用户
+    selectallonlinecount: `${baseUrlA}/selectallonlinecount`,
+    selectallofflinecount: `${baseUrlA}/selectallofflinecount`,
 }
 
 export default apiEndpoints;

@@ -41,18 +41,24 @@
         </div>
         <div class="data-container">
           <div class="chart-section full-width">
-            <h3 class="chart-title">各种类对应语料总数</h3>
+            <h3 class="chart-title">各种类对应语料数据图</h3>
             <v-chart class="chart" :option="kindCorpusOption" />
           </div>
 
           <div class="chart-section">
-            <h3 class="chart-title">当前语料库中各语料数据总览</h3>
+            <h3 class="chart-title">当前语料库中种类分类比例图</h3>
             <v-chart class="chart" :option="totalDataOption" />
           </div>
 
           <div class="chart-section">
-            <h3 class="chart-title">当前语料库中普通用户数量</h3>
-            <v-chart class="chart" :option="userDataOption" />
+            <div class="status-section">
+              <h3 class="chart-title">语料上线状态比例图</h3>
+              <div class="total-corpus">
+                <span class="total-label">语料总数：</span>
+                <span class="total-value">{{ totalCorpus }}</span>
+              </div>
+              <v-chart class="chart" :option="corpusStatusOption" />
+            </div>
           </div>
         </div>
       </div>
@@ -130,29 +136,23 @@ export default defineComponent({
       });
     };
 
-    // 用于存储表格数据的响应式数据
+    // ���于存储表格数据的响应式数据
     const tableData = ref([]);
     // 定义函数用于调用接口并处理数据展示
     const getCorpusData = async () => {
       try {
-        // 使用 Promise.all 并行发起多个请求
-        const [corpusResponse, kindResponse, typeResponse] = await Promise.all([
-          axios.get(apiEndpoints.selectallcorscount),
+        // 只获取种类数和分类数
+        const [kindResponse, typeResponse] = await Promise.all([
           axios.get(apiEndpoints.selectallkindcount),
           axios.get(apiEndpoints.selectalltypecount),
         ]);
 
         // 提取返回的数据
-        const corpusCount = corpusResponse.data.data;
         const kindCount = kindResponse.data.data;
         const typeCount = typeResponse.data.data;
 
-        // 创建表格数据
+        // 只保存种类数和分类数
         tableData.value = [
-          {
-            name: '语料数',
-            value: corpusCount,
-          },
           {
             name: '种类数',
             value: kindCount,
@@ -163,32 +163,6 @@ export default defineComponent({
           },
         ];
       } catch (error) {
-        // 统一错误处理
-        ElMessage.error('获取数据失败，请稍后重试');
-      }
-    };
-
-    const userData = ref([]);
-    // 定义函数用于调用接口并处理数据展示
-    const getUserData = async () => {
-      try {
-        // 使用 Promise.all 并行发起多个请求
-        const [userResponse] = await Promise.all([
-          axios.get(apiEndpoints.selectreusercount),
-        ]);
-
-        // 提取返回的数据
-        const userCount = userResponse.data.data;
-
-        // 创建表格数据
-        userData.value = [
-          {
-            name: '普通用户数',
-            value: userCount,
-          },
-        ];
-      } catch (error) {
-        // 统一错误处理
         ElMessage.error('获取数据失败，请稍后重试');
       }
     };
@@ -228,48 +202,69 @@ export default defineComponent({
             // 等待所有种类统计数据的请求完成
             Promise.all(kindCorpusDataPromises).then((results) => {
               kindCorpusTableData.value = results;
-              const totalCorpusCount = kindCorpusTableData.value.reduce((acc, item) => acc + item.corpusCount, 0);
-              // 计算上线数的总和
-              const totalOnlineCount = kindCorpusTableData.value.reduce((acc, item) => acc + item.onlineCount, 0);
-              // 计算下线数的总和
-              const totalOfflineCount = kindCorpusTableData.value.reduce((acc, item) => acc + item.offlineCount, 0);
-
-              // 将总数添加到kindCorpusTableData数组中作为新的一行数据
-              kindCorpusTableData.value.push({
-                kindName: '总数',
-                corpusCount: totalCorpusCount,
-                onlineCount: totalOnlineCount,
-                offlineCount: totalOfflineCount
-              });
             });
           })
-
           .catch(() => {
             ElMessage.error('获取种类名称数据失败，请稍后重试');
           });
     };
+
+    // 添加新的响应式引用和获取数据的函数
+    const corpusStatusData = ref([]);
+
+    const getCorpusStatusData = async () => {
+      try {
+        const [onlineResponse, offlineResponse] = await Promise.all([
+          axios.get(apiEndpoints.selectallonlinecount),
+          axios.get(apiEndpoints.selectallofflinecount),
+        ]);
+
+        const onlineCount = onlineResponse.data.data;
+        const offlineCount = offlineResponse.data.data;
+
+        corpusStatusData.value = [
+          {
+            name: '上线语料',
+            value: onlineCount,
+          },
+          {
+            name: '下线语料',
+            value: offlineCount,
+          },
+        ];
+      } catch (error) {
+        ElMessage.error('获取语料状态数据失败，请稍后重试');
+      }
+    };
+
     // 在页面挂载完成后调用接口获取据数
     onMounted(() => {
       getCorpusData();
       getKindCorpusData();
-      getUserData()
+      getCorpusStatusData();
     });
 
     // 总数图表配置
     const totalDataOption = computed(() => ({
       tooltip: {
-        trigger: 'item'
+        trigger: 'item',
+        formatter: '{a} <br/>{b}: {c} ({d}%)'
       },
       legend: {
         orient: 'vertical',
         left: 'left'
       },
+      color: ['#F4D03F', '#82E0AA'], // 淡黄色和浅绿色
       series: [{
+        name: '数据总览',
         type: 'pie',
         radius: '50%',
         data: tableData.value.map(item => ({
           name: item.name,
-          value: item.value
+          value: item.value,
+          itemStyle: {
+            color: item.name === '种类数' ? '#F4D03F' : '#82E0AA' // 根据名称设置颜色
+          }
         })),
         emphasis: {
           itemStyle: {
@@ -277,106 +272,10 @@ export default defineComponent({
             shadowOffsetX: 0,
             shadowColor: 'rgba(0, 0, 0, 0.5)'
           }
-        }
-      }]
-    }));
-
-    // 用户数据图表配置
-    const userDataOption = computed(() => ({
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'shadow'
-        }
-      },
-      grid: {
-        left: '15%',
-        right: '15%',
-        bottom: '15%'
-      },
-      xAxis: {
-        type: 'category',
-        data: userData.value.map(item => item.name),
-        axisLabel: {
-          fontSize: 14,
-          color: '#333'
-        },
-        axisTick: {
-          show: false
-        },
-        axisLine: {
-          lineStyle: {
-            color: '#ccc'
-          }
-        }
-      },
-      yAxis: {
-        type: 'value',
-        name: '用户数量',
-        nameTextStyle: {
-          fontSize: 14,
-          color: '#666'
-        },
-        minInterval: 1,
-        axisLabel: {
-          fontSize: 12,
-          color: '#666',
-          formatter: function(value) {
-            return Math.floor(value);
-          }
-        },
-        splitLine: {
-          lineStyle: {
-            type: 'dashed',
-            color: '#eee'
-          }
-        }
-      },
-      series: [{
-        type: 'bar',
-        data: userData.value.map(item => item.value),
-        barWidth: '40%',
-        itemStyle: {
-          color: {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [{
-              offset: 0,
-              color: '#409EFF' // 渐变开始颜色
-            }, {
-              offset: 1,
-              color: '#95CCF9' // 渐变结束颜色
-            }]
-          },
-          borderRadius: [8, 8, 0, 0]
-        },
-        emphasis: {
-          itemStyle: {
-            color: {
-              type: 'linear',
-              x: 0,
-              y: 0,
-              x2: 0,
-              y2: 1,
-              colorStops: [{
-                offset: 0,
-                color: '#66b1ff' // 悬停时的渐变开始颜色
-              }, {
-                offset: 1,
-                color: '#b3d8ff' // 悬停时的渐变结束颜色
-              }]
-            }
-          }
         },
         label: {
           show: true,
-          position: 'top',
-          fontSize: 14,
-          color: '#666',
-          formatter: '{c}'
+          formatter: '{b}: {c} ({d}%)'
         }
       }]
     }));
@@ -421,6 +320,47 @@ export default defineComponent({
       ]
     }));
 
+    // 修改 corpusStatusOption 配置
+    const corpusStatusOption = computed(() => ({
+      tooltip: {
+        trigger: 'item',
+        formatter: '{a} <br/>{b}: {c} ({d}%)'
+      },
+      legend: {
+        orient: 'vertical',
+        left: 'left'
+      },
+      color: ['#409EFF', '#FF9900'], // 天蓝色和橙色
+      series: [{
+        name: '语料状态',
+        type: 'pie',
+        radius: '50%',
+        data: corpusStatusData.value.map(item => ({
+          name: item.name,
+          value: item.value,
+          itemStyle: {
+            color: item.name === '上线语料' ? '#409EFF' : '#FF9900' // 根据名称设置颜色
+          }
+        })),
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        },
+        label: {
+          show: true,
+          formatter: '{b}: {c} ({d}%)'
+        }
+      }]
+    }));
+
+    // 在 setup 函数中添加计算总数的逻辑
+    const totalCorpus = computed(() => {
+      return corpusStatusData.value.reduce((sum, item) => sum + item.value, 0);
+    });
+
     return {
       userName,
       logout,
@@ -429,11 +369,11 @@ export default defineComponent({
       greeting,
       tableData,
       kindCorpusTableData,
-      getUserData,
-      userData,
       totalDataOption,
-      userDataOption,
-      kindCorpusOption
+      kindCorpusOption,
+      corpusStatusData,
+      corpusStatusOption,
+      totalCorpus
     };
   }
 });
@@ -590,5 +530,34 @@ export default defineComponent({
   .chart-section {
     padding: 5px;
   }
+}
+
+.status-section {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.total-corpus {
+  position: absolute;
+  top: 40px;  /* 调整位置，在标题下方 */
+  right: 20px;
+  padding: 8px 15px;
+  background-color: #f5f7fa;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+}
+
+.total-label {
+  font-size: 14px;
+  color: #606266;
+  margin-right: 5px;
+}
+
+.total-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: #409EFF;
 }
 </style>

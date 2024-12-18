@@ -358,6 +358,16 @@ export default defineComponent({
 
     // 添加提交新增的处理函数
     const submitAdd = async () => {
+      // 添加输入验证
+      if (!addForm.value.kindName.trim()) {
+        ElMessage.error('请选择种类');
+        return;
+      }
+      if (!addForm.value.typeName.trim()) {
+        ElMessage.error('请输入分类名称');
+        return;
+      }
+
       try {
         const response = await axios.post(apiEndpoints.inserttype, addForm.value);
         if (response.data.code === 200) {
