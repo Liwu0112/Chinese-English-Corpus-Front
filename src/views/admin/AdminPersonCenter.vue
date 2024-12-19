@@ -173,6 +173,7 @@ export default defineComponent({
       }
       axios.post(apiEndpoints.updatepassword, {
         userName: userName,
+        userOldPassword: oldPassword.value,
         userNewPassword: newPassword.value
       }).then((response) => {
         if (response.data.code === 200) {
@@ -185,7 +186,7 @@ export default defineComponent({
           oldPassword.value = "";
           newPassword.value = "";
           confirmNewPassword.value = "";
-          ElMessage.error("修改失败，新密码和旧密码相同");
+          ElMessage.error("修改失败，新密码和旧密码相同或旧密码不正确");
         }
       }).catch(() => {
         ElMessage.error("请求失败，请稍后重试");
