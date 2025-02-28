@@ -12,67 +12,77 @@ import AdminControllerKinds from "@/views/admin/AdminControllerKinds.vue";
 import AdminPersonCenter from "@/views/admin/AdminPersonCenter.vue";
 import AdminControllerUsers from "@/views/admin/AdminControllerUsers.vue";
 
+
 const routes = [
+    //登录页面
   {
     path: '/',
     name: 'Login',
     component: LoginPage,
   },
+    //注册页面
   {
     path: '/regular_enroll',
     name: 'RegularEnroll',
     component: RegularUserEnrollPage,
   },
+    //普通用户首页
   {
     path: '/regular_user_home',
     name: 'RegularUserHome',
     component: RegularUserHomePage,
     meta: { requiresAuth: true, role: 'regular_user' },
   },
+    //用户语料段查询页面
   {
     path: '/regular_user_corpus',
     name: 'RegularUserSelectByCorpus',
     component: RegularUserSelectByCorpusPage,
     meta: { requiresAuth: true, role: 'regular_user' },
   },
+    //用户分类查询页面
   {
     path: '/regular_user_type',
     name: 'RegularUserSelectByType',
     component: RegularUserSelectByTypePage,
     meta: { requiresAuth: true, role: 'regular_user' },
   },
+    //用户个人中心
   {
     path: '/regular_user_personal_center',
     name: 'RegularUserPersonalCenter',
     component: RegularUserPersonalCenterPage,
     meta: { requiresAuth: true, role: 'regular_user' },
   },
-
-
+    //管理员首页
   {
     path: '/admin_home',
     name: 'AdminHome',
     component: AdminHomePage,
     meta: { requiresAuth: true, role: 'admin' },
   },
+    //管理员管理语料页面
   {
     path: '/admin_con_corpus',
     name: 'AdminControllerCorpus',
     component: AdminControllerCorpus,
     meta: { requiresAuth: true, role: 'admin' },
   } ,
+    //管理员管理种类页面
   {
     path: '/admin_con_kinds',
     name: 'AdminControllerKinds',
     component: AdminControllerKinds,
     meta: { requiresAuth: true, role: 'admin' },
   },
+    //管理员管理普通用户页面
   {
     path: '/admin_con_con_users',
     name: 'AdminConUsers',
     component: AdminControllerUsers,
     meta: {requiresAuth: true, role: 'admin' },
   },
+    //管理员个人中心
   {
     path: '/admin_con_personal_center',
     name: 'AdminPersonalCenter',
@@ -87,11 +97,13 @@ const router = createRouter({
   routes,
 });
 
+//捕获cookie
 function isAuthenticated() {
   const cookieName = "cookieName";
   return document.cookie.split("; ").some((cookie) => cookie.startsWith(`${cookieName}=`));
 }
 
+//权限判定
 router.beforeEach((to, from, next) => {
   const role = sessionStorage.getItem('role'); // 获取角色
   if (to.name === 'Login' || to.name === 'RegularEnroll') {

@@ -200,7 +200,7 @@ export default defineComponent({
     // 获取第二层分类数据的方法修改
     const fetchSecondLevelData = async (kindName) => {
       try {
-        const response = await axios.post(`${apiEndpoints.selecttnbykn}?kindName=${kindName}`);
+        const response = await axios.get(`${apiEndpoints.selecttnbykn}?kindName=${kindName}`);
         if (response.data.code === 200) {
           const secondLevelData = response.data.data.map((type, index) => ({
             id: `${kindName}-${index + 1}`,

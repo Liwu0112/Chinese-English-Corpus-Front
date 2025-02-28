@@ -122,7 +122,7 @@ const submitForm = () => {
               ElMessage.success("注册成功！");
               router.push("/"); // 跳转到登录页面
             } else {
-              ElMessage.error("注册失败：" + response.data.msg);
+              ElMessage.error("注册失败，用户已存在" );
             }
           })
           .catch((error) => {

@@ -102,7 +102,7 @@ export default defineComponent({
       if (currentHour >= 0 && currentHour < 12) {
         return "早上好";
       } else if (currentHour >= 12 && currentHour < 18) {
-        return "中午好";
+        return "下午好";
       } else {
         return "晚上好";
       }
