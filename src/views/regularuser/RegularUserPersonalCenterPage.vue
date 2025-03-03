@@ -18,6 +18,10 @@
           <i class="el-icon-shopping-cart"></i>
           <span>分类查找</span>
         </el-menu-item>
+        <el-menu-item index="RegularUserDownExcel">
+          <i class="el-icon-shopping-cart"></i>
+          <span>语料下载</span>
+        </el-menu-item>
         <el-menu-item index="RegularUserPersonalCenter">
           <i class="el-icon-tickets"></i>
           <span>个人中心</span>

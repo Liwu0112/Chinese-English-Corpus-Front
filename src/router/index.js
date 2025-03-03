@@ -11,7 +11,7 @@ import AdminControllerCorpus from "@/views/admin/AdminControllerCorpus.vue";
 import AdminControllerKinds from "@/views/admin/AdminControllerKinds.vue";
 import AdminPersonCenter from "@/views/admin/AdminPersonCenter.vue";
 import AdminControllerUsers from "@/views/admin/AdminControllerUsers.vue";
-
+import RegularUserDownExcelPage from "@/views/regularuser/RegularUserDownExcelPage.vue";
 
 const routes = [
     //登录页面
@@ -52,6 +52,13 @@ const routes = [
     path: '/regular_user_personal_center',
     name: 'RegularUserPersonalCenter',
     component: RegularUserPersonalCenterPage,
+    meta: { requiresAuth: true, role: 'regular_user' },
+  },
+    //用户下载语料页面
+  {
+    path: '/regular_user_down_excel',
+    name: 'RegularUserDownExcel',
+    component: RegularUserDownExcelPage,
     meta: { requiresAuth: true, role: 'regular_user' },
   },
     //管理员首页

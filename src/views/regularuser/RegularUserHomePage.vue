@@ -18,6 +18,10 @@
           <i class="el-icon-shopping-cart"></i>
           <span>分类查找</span>
         </el-menu-item>
+        <el-menu-item index="RegularUserDownExcel">
+          <i class="el-icon-shopping-cart"></i>
+          <span>语料下载</span>
+        </el-menu-item>
         <el-menu-item index="RegularUserPersonalCenter">
           <i class="el-icon-tickets"></i>
           <span>个人中心</span>
@@ -108,9 +112,11 @@ export default defineComponent({
         router.push("/");
       });
     };
+
+
+
     // 用于存储表格数据的响应式数据
     const tableData = ref([]);
-
     // 定义函数用于调用接口并处理数据展示
     const getCorpusData = () => {
       // 调用reselectcountcorpus接口获取语料数
@@ -326,8 +332,6 @@ export default defineComponent({
         initCharts();
       }, 500);
     });
-
-
     return {
       userName,
       logout,
@@ -335,7 +339,7 @@ export default defineComponent({
       activeMenu,
       greeting,
       tableData,
-      kindCorpusTableData
+      kindCorpusTableData,
     };
   }
 });

@@ -1,6 +1,6 @@
-const baseUrlA = 'http://corpus.liwusix.top/admin';
-const baseUrlB = 'http://corpus.liwusix.top/common'
-const baseUrlC = 'http://corpus.liwusix.top/regularuser';
+const baseUrlA = 'http://corpus.liwusix.top:8090/admin';
+const baseUrlB = 'http://corpus.liwusix.top:8090/common'
+const baseUrlC = 'http://corpus.liwusix.top:8090/regularuser';
 
 const apiEndpoints = {
     login: `${baseUrlB}/login`,  //登录接口
@@ -14,7 +14,7 @@ const apiEndpoints = {
     reselectcounttype: `${baseUrlB}/selectalltypecount`,  //查看所有分类数（t_type)
     rescorpusbykindname: `${baseUrlB}/selectonlinebykindname`,//普通用户查询种类下对应的所有状态为1的语料总数
     selectallonlinecount: `${baseUrlB}/selectallonlinecount`,
-
+    getcorpusexcel: `${baseUrlC}/getdata`,
     selectallkindcount: `${baseUrlB}/selectallkindcount`,   //管理员查询种类总数
 
     selectalltypecount: `${baseUrlB}/selectalltypecount`,   //管理员查询分类总数
