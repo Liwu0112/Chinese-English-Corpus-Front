@@ -1,6 +1,6 @@
-const baseUrlA = 'http://corpus.liwusix.top:8090/admin';
-const baseUrlB = 'http://corpus.liwusix.top:8090/common'
-const baseUrlC = 'http://corpus.liwusix.top:8090/regularuser';
+const baseUrlA = '/admin';
+const baseUrlB = '/common'
+const baseUrlC = '/regularuser';
 
 const apiEndpoints = {
     login: `${baseUrlB}/login`,  //登录接口

@@ -201,7 +201,7 @@ export default defineComponent({
   setup() {
     const router = useRouter();
     const userName = sessionStorage.getItem("userName");
-    const activeMenu = ref("AdminControllerKinds");
+
 
     const getGreeting = () => {
       const currentHour = new Date().getHours();
@@ -216,10 +216,13 @@ export default defineComponent({
 
     const greeting = ref(getGreeting());
 
+
+    const activeMenu = ref("AdminControllerKinds");
     const handleMenuSelect = (index) => {
       activeMenu.value = index;
       router.push({
         name: index,
+        query: { username: userName},
       });
     };
 
@@ -234,7 +237,7 @@ export default defineComponent({
         }
       }).catch((error) => {
         if (error.response && error.response.status === 401) {
-          ElMessage.error("份验证失败，请重新登录");
+          ElMessage.error("身份验证失败，请重新登录");
         } else {
           ElMessage.error("请求失败，请稍后重试");
         }

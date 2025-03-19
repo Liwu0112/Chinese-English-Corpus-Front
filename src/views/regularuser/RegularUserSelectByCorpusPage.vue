@@ -136,7 +136,7 @@ export default defineComponent({
       // 跳转并传递查询参数
       router.push({
         name: index, // 选中的菜单项进行跳转
-        query: { username: userName.value}, // 传递 userName
+        query: { username: userName}, // 传递 userName
       });
     };
 
@@ -235,7 +235,13 @@ export default defineComponent({
 
     // 页面加载时立即获取数据
     onMounted(() => {
-      fetchAllCorpus();
+      const userName = sessionStorage.getItem("userName");
+      if (!userName) {
+        // 如果用户未登录，重定向到登录页面
+        router.push("/");
+      } else {
+        fetchAllCorpus();
+      }
     });
 
     // 在 setup 中添加新的分页方法
@@ -381,7 +387,7 @@ export default defineComponent({
   align-items: center;
 }
 
-/* 添加间�� */
+/* 添加间距 */
 .user-info span {
   margin-right: 15px; /* 设置欢迎文字与按钮之间的间距 */
   color: black; /* 设置字体颜色为黑色 */

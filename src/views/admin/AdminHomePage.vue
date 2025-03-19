@@ -114,6 +114,7 @@ export default defineComponent({
       activeMenu.value = index;
       router.push({
         name: index,
+        query: { username: userName},
       });
     };
 

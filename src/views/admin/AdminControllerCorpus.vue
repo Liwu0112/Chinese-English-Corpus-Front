@@ -375,9 +375,11 @@ export default defineComponent({
     // 菜单项选择
     const handleMenuSelect = (index) => {
       activeMenu.value = index;
-      router.push({name: index});
+      router.push({
+        name: index,
+        query: { username: userName},
+      });
     };
-
     // 退出登录
     const logout = () => {
       axios.post(apiEndpoints.logout).then((response) => {

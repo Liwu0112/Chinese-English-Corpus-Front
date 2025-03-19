@@ -113,7 +113,8 @@ export default defineComponent({
     const handleMenuSelect = (index) => {
       activeMenu.value = index;
       router.push({
-        name: index
+        name: index,
+        query: { username: userName},
       });
     };
 
